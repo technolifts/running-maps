@@ -3,6 +3,13 @@ import { RouteMap } from './map';
 import { suggestPlaces, generateRoute } from './api';
 import type { AppState, Place, Location, Preferences } from './types';
 
+// Analytics tracking
+function track(event: string, properties?: Record<string, any>): void {
+  if (typeof window !== 'undefined' && (window as any).va) {
+    (window as any).va('track', event, properties);
+  }
+}
+
 // Initialize state
 const state: AppState = {
   location: null,
@@ -146,6 +153,13 @@ findPlacesBtn.addEventListener('click', async () => {
       response.places.slice(0, numToPreselect).map(p => p.id)
     );
 
+    track('places_searched', {
+      distance_miles: distance,
+      has_preferences: Object.values(preferences).some(Boolean),
+      num_places: response.places.length,
+      num_preselected: state.selectedPlaceIds.size,
+    });
+
     displayPlaces();
     mapSection.classList.remove('hidden');
     routeSection.classList.add('hidden');
@@ -208,11 +222,18 @@ function createPlaceCard(place: Place, selected: boolean): HTMLElement {
 }
 
 function togglePlaceSelection(placeId: string): void {
-  if (state.selectedPlaceIds.has(placeId)) {
+  const wasSelected = state.selectedPlaceIds.has(placeId);
+
+  if (wasSelected) {
     state.selectedPlaceIds.delete(placeId);
   } else {
     state.selectedPlaceIds.add(placeId);
   }
+
+  track('places_modified', {
+    action: wasSelected ? 'removed' : 'added',
+    total_selected: state.selectedPlaceIds.size,
+  });
 
   // Update checkbox state
   const checkbox = document.querySelector(`input[data-place-id="${placeId}"]`) as HTMLInputElement;
@@ -263,6 +284,12 @@ generateRouteBtn.addEventListener('click', async () => {
 
     state.generatedRoute = response;
 
+    track('route_generated', {
+      num_places: selectedPlaces.length,
+      distance_requested: state.distance,
+      distance_actual: response.distance_miles,
+    });
+
     // Show route on map
     await routeMap.showRoute(
       state.location,
@@ -305,11 +332,15 @@ function displayRouteSummary(): void {
 }
 
 // Route action handlers
+openMapsBtn.addEventListener('click', () => {
+  track('maps_opened');
+});
 copyLinkBtn.addEventListener('click', async () => {
   if (!state.generatedRoute) return;
 
   try {
     await navigator.clipboard.writeText(state.generatedRoute.google_maps_url);
+    track('link_copied');
     copyLinkBtn.textContent = 'Copied!';
     setTimeout(() => {
       copyLinkBtn.textContent = 'Copy Link';
@@ -329,6 +360,7 @@ shareBtn.addEventListener('click', async () => {
         text: `Check out this ${state.generatedRoute.distance_miles} mile running route!`,
         url: state.generatedRoute.google_maps_url,
       });
+      track('link_shared');
     } catch (error) {
       // User cancelled or share failed
       console.log('Share cancelled');
