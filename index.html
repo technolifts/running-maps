@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Running Maps - Plan Your Perfect Run</title>
+  <meta name="description" content="Generate optimized running routes through interesting places in any city">
+</head>
+<body>
+  <div id="app">
+    <!-- Hero Section -->
+    <header class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 py-6">
+        <h1 class="text-3xl font-bold text-gray-900">Running Maps</h1>
+        <p class="text-gray-600 mt-1">Plan your perfect running route</p>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+      <!-- Input Form -->
+      <div id="input-section" class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="space-y-4">
+          <!-- Location Input -->
+          <div>
+            <label for="location-input" class="block text-sm font-medium text-gray-700 mb-2">
+              Starting Location
+            </label>
+            <input
+              type="text"
+              id="location-input"
+              class="input-field"
+              placeholder="Enter a city or address"
+            />
+          </div>
+
+          <!-- Distance Input -->
+          <div>
+            <label for="distance-input" class="block text-sm font-medium text-gray-700 mb-2">
+              Distance
+            </label>
+            <div class="flex gap-2">
+              <select id="distance-select" class="input-field flex-1">
+                <option value="1">1 mile</option>
+                <option value="2">2 miles</option>
+                <option value="3">3 miles</option>
+                <option value="5" selected>5 miles</option>
+                <option value="7">7 miles</option>
+                <option value="10">10 miles</option>
+                <option value="13">13 miles</option>
+                <option value="custom">Custom...</option>
+              </select>
+              <input
+                type="number"
+                id="distance-custom"
+                class="input-field w-24 hidden"
+                placeholder="Miles"
+                min="0.5"
+                max="50"
+                step="0.1"
+              />
+            </div>
+          </div>
+
+          <!-- Preferences (Collapsible) -->
+          <details class="border border-gray-200 rounded-lg">
+            <summary class="px-4 py-3 cursor-pointer text-sm font-medium text-gray-700 hover:bg-gray-50">
+              Customize preferences
+            </summary>
+            <div class="px-4 pb-4 pt-2 space-y-3">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" id="pref-parks" class="rounded text-blue-600">
+                <span class="text-sm text-gray-700">Prefer parks and nature</span>
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" id="pref-water" class="rounded text-blue-600">
+                <span class="text-sm text-gray-700">Include water stops</span>
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" id="pref-urban" class="rounded text-blue-600">
+                <span class="text-sm text-gray-700">Urban explorer (architecture, street art)</span>
+              </label>
+            </div>
+          </details>
+
+          <!-- Submit Button -->
+          <button id="find-places-btn" class="btn-primary w-full" disabled>
+            Find Places
+          </button>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div id="map-section" class="hidden">
+        <div id="map" class="w-full h-96 rounded-lg shadow-md mb-4"></div>
+
+        <!-- Places List -->
+        <div id="places-section" class="bg-white rounded-lg shadow-md p-6 mb-4">
+          <h2 class="text-xl font-semibold mb-4">Select Places to Visit</h2>
+          <p class="text-sm text-gray-600 mb-4">
+            <span id="selection-count">3 places selected</span> -
+            <span id="estimated-distance">~5.0 miles</span>
+          </p>
+          <div id="places-list" class="space-y-3"></div>
+          <button id="generate-route-btn" class="btn-primary w-full mt-6">
+            Generate Route
+          </button>
+        </div>
+      </div>
+
+      <!-- Route Output -->
+      <div id="route-section" class="hidden bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Your Route is Ready!</h2>
+        <div id="route-summary" class="mb-4"></div>
+        <div class="flex gap-3">
+          <a id="open-maps-btn" href="#" target="_blank" class="btn-primary flex-1 text-center">
+            Open in Google Maps
+          </a>
+          <button id="copy-link-btn" class="btn-secondary">
+            Copy Link
+          </button>
+          <button id="share-btn" class="btn-secondary">
+            Share
+          </button>
+        </div>
+        <button id="start-over-btn" class="btn-secondary w-full mt-4">
+          Start Over
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p class="mt-4 text-gray-700">Loading...</p>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div id="error-message" class="hidden bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
+        <p id="error-text"></p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
