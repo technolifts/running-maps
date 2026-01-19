@@ -10,8 +10,12 @@ export class RouteMap {
   /**
    * Initialize the Google Map instance
    */
-  init(element: HTMLElement, center: Location): void {
-    this.map = new google.maps.Map(element, {
+  init(element: string | HTMLElement, center: Location): void {
+    const mapElement = typeof element === 'string'
+      ? document.getElementById(element)!
+      : element;
+
+    this.map = new google.maps.Map(mapElement, {
       center,
       zoom: 13,
       mapTypeControl: false,
@@ -49,7 +53,7 @@ export class RouteMap {
       const marker = new google.maps.Marker({
         position: place.location,
         map: this.map!,
-        title: place.name,
+        title: place.id,
         icon: isSelected
           ? {
               path: google.maps.SymbolPath.CIRCLE,
@@ -89,10 +93,15 @@ export class RouteMap {
   /**
    * Update marker style for a specific place (selected/unselected)
    */
-  updateMarkerStyle(placeId: string, places: Place[], isSelected: boolean): void {
-    const placeIndex = places.findIndex((p) => p.id === placeId);
-    if (placeIndex !== -1 && this.markers[placeIndex]) {
-      this.markers[placeIndex].setIcon(
+  updateMarkerStyle(placeId: string, isSelected: boolean): void {
+    // Find the marker by comparing the place ID stored in the marker's title
+    const marker = this.markers.find((m) => {
+      const title = m.getTitle();
+      return title && title === placeId;
+    });
+
+    if (marker) {
+      marker.setIcon(
         isSelected
           ? {
               path: google.maps.SymbolPath.CIRCLE,
@@ -117,7 +126,7 @@ export class RouteMap {
   /**
    * Display the generated route on the map
    */
-  showRoute(route: google.maps.DirectionsResult): void {
+  async showRoute(start: Location, waypoints: Location[]): Promise<void> {
     if (!this.map) {
       throw new Error('Map not initialized');
     }
@@ -138,10 +147,31 @@ export class RouteMap {
       },
     });
 
-    this.directionsRenderer.setDirections(route);
+    // Build the route through the Directions API
+    const directionsService = new google.maps.DirectionsService();
 
-    // Clear place markers as route has its own markers
-    this.clearMarkers();
+    // Convert waypoints to DirectionsWaypoint format
+    const googleWaypoints = waypoints.slice(0, -1).map(wp => ({
+      location: wp,
+      stopover: true,
+    }));
+
+    const request: google.maps.DirectionsRequest = {
+      origin: start,
+      destination: waypoints[waypoints.length - 1] || start,
+      waypoints: googleWaypoints,
+      travelMode: google.maps.TravelMode.WALKING,
+    };
+
+    try {
+      const result = await directionsService.route(request);
+      this.directionsRenderer.setDirections(result);
+
+      // Clear place markers as route has its own markers
+      this.clearMarkers();
+    } catch (error) {
+      throw new Error('Failed to generate route directions');
+    }
   }
 
   /**

@@ -1,7 +1,7 @@
 import './styles.css';
 import { RouteMap } from './map';
 import { suggestPlaces, generateRoute } from './api';
-import type { AppState, Place, Location, Preferences } from './types';
+import type { AppState, Place, Preferences } from './types';
 
 // Analytics tracking
 function track(event: string, properties?: Record<string, any>): void {
@@ -20,11 +20,8 @@ const state: AppState = {
   generatedRoute: null,
 };
 
-// Get API key from environment
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
-
 // Initialize map
-const routeMap = new RouteMap(GOOGLE_MAPS_API_KEY);
+const routeMap = new RouteMap();
 
 // DOM Elements
 const locationInput = document.getElementById('location-input') as HTMLInputElement;
@@ -134,8 +131,7 @@ findPlacesBtn.addEventListener('click', async () => {
     const distance = getCurrentDistance();
 
     const response = await suggestPlaces({
-      lat: state.location.lat,
-      lng: state.location.lng,
+      location: state.location,
       distance_miles: distance,
       preferences,
     });
@@ -269,12 +265,7 @@ generateRouteBtn.addEventListener('click', async () => {
 
   try {
     const selectedPlaces = state.suggestedPlaces
-      .filter(p => state.selectedPlaceIds.has(p.id))
-      .map(p => ({
-        lat: p.location.lat,
-        lng: p.location.lng,
-        name: p.name,
-      }));
+      .filter(p => state.selectedPlaceIds.has(p.id));
 
     const response = await generateRoute({
       start: state.location,
@@ -293,7 +284,7 @@ generateRouteBtn.addEventListener('click', async () => {
     // Show route on map
     await routeMap.showRoute(
       state.location,
-      response.optimized_order.map(p => ({ lat: p.lat, lng: p.lng }))
+      response.optimized_order.map(p => p.location)
     );
 
     // Display route summary

@@ -50,6 +50,6 @@ export interface AppState {
   distance: number;
   preferences: Preferences;
   suggestedPlaces: Place[];
-  selectedPlaceIds: string[];
+  selectedPlaceIds: Set<string>;
   generatedRoute: RouteResponse | null;
 }
