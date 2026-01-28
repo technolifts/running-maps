@@ -175,30 +175,51 @@ export class RouteMap {
   }
 
   /**
-   * Get autocomplete instance for location input
+   * Create new PlaceAutocompleteElement and replace the input
+   * Uses the new Google Maps Places API (for new customers)
    */
-  getAutocomplete(
-    input: HTMLInputElement,
-    onPlaceChanged?: (location: Location) => void
-  ): google.maps.places.Autocomplete {
-    const autocomplete = new google.maps.places.Autocomplete(input, {
-      types: ['geocode'],
-      fields: ['geometry', 'name'],
-    });
+  createPlaceAutocomplete(
+    inputContainer: HTMLElement,
+    onPlaceSelected?: (location: Location) => void
+  ): google.maps.places.PlaceAutocompleteElement {
+    // Create the new autocomplete element
+    const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement();
 
-    if (onPlaceChanged) {
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.geometry?.location) {
-          const location = {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-          };
-          onPlaceChanged(location);
+    // Style the autocomplete element to match our input
+    (placeAutocomplete as HTMLElement).style.width = '100%';
+
+    // Clear the container and add the new element
+    inputContainer.innerHTML = '';
+    inputContainer.appendChild(placeAutocomplete);
+
+    // Listen for place selection using gmp-select event
+    if (onPlaceSelected) {
+      placeAutocomplete.addEventListener('gmp-select', async (event: any) => {
+        try {
+          // Get the place prediction from the event
+          const placePrediction = event.placePrediction;
+
+          if (placePrediction) {
+            // Convert prediction to place
+            const place = placePrediction.toPlace();
+
+            // Fetch the location field
+            await place.fetchFields({ fields: ['location'] });
+
+            if (place.location) {
+              const location: Location = {
+                lat: place.location.lat(),
+                lng: place.location.lng(),
+              };
+              onPlaceSelected(location);
+            }
+          }
+        } catch (error) {
+          console.error('Error processing place selection:', error);
         }
       });
     }
 
-    return autocomplete;
+    return placeAutocomplete;
   }
 }

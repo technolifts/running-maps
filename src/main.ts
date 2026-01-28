@@ -1,6 +1,7 @@
 import './styles.css';
 import { RouteMap } from './map';
 import { suggestPlaces, generateRoute } from './api';
+import { loadGoogleMapsAPI } from './google-maps-loader';
 import type { AppState, Place, Preferences } from './types';
 
 // Analytics tracking
@@ -79,24 +80,33 @@ function getCurrentDistance(): number {
   return parseFloat(distanceSelect.value);
 }
 
-// Setup autocomplete
-let autocomplete: google.maps.places.Autocomplete;
+// Setup autocomplete with new PlaceAutocompleteElement
+let placeAutocomplete: google.maps.places.PlaceAutocompleteElement;
 
 async function initAutocomplete(): Promise<void> {
   try {
-    await routeMap.init('map', { lat: 40.7829, lng: -73.9654 });
-    autocomplete = routeMap.getAutocomplete(locationInput);
+    // Load Google Maps API first
+    await loadGoogleMapsAPI();
 
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace();
-      if (place.geometry?.location) {
-        state.location = {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-        };
+    // Initialize the map (google.maps is available)
+    routeMap.init('map', { lat: 40.7829, lng: -73.9654 });
+
+    // Create a wrapper div for the PlaceAutocompleteElement
+    const inputParent = locationInput.parentElement!;
+    const autocompleteContainer = document.createElement('div');
+    autocompleteContainer.style.width = '100%';
+
+    // Replace the input with the container
+    inputParent.replaceChild(autocompleteContainer, locationInput);
+
+    // Create the new PlaceAutocompleteElement
+    placeAutocomplete = routeMap.createPlaceAutocomplete(
+      autocompleteContainer,
+      (location) => {
+        state.location = location;
         findPlacesBtn.disabled = false;
       }
-    });
+    );
   } catch (error) {
     showError('Failed to initialize map. Please check your API key.');
     console.error(error);
