@@ -38,7 +38,7 @@ Running Maps is a simple web tool that helps runners create interesting routes b
    - Enable billing (required even for free tier)
 
 2. **Enable Required APIs**
-   - Maps JavaScript API (for frontend map display)
+   - Maps JavaScript API (for frontend map display and autocomplete)
    - Places API (for finding points of interest)
    - Directions API (for route generation)
 
@@ -46,8 +46,8 @@ Running Maps is a simple web tool that helps runners create interesting routes b
 
    **Client-side key** (for Maps JavaScript API):
    - Create an API key in Google Cloud Console
-   - Restrict to HTTP referrers: `*.vercel.app/*`, `yourdomain.com/*`
-   - Only enable Maps JavaScript API
+   - Restrict to HTTP referrers: `*.vercel.app/*`, `yourdomain.com/*`, `localhost:*/*`
+   - Enable Maps JavaScript API and Places API
 
    **Server-side key** (for Places & Directions):
    - Create a second API key

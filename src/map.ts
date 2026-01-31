@@ -175,51 +175,44 @@ export class RouteMap {
   }
 
   /**
-   * Create new PlaceAutocompleteElement and replace the input
-   * Uses the new Google Maps Places API (for new customers)
+   * Create classic Autocomplete widget for an input element
+   * Uses the legacy Places API which works with HTTP referrer restrictions
    */
   createPlaceAutocomplete(
     inputContainer: HTMLElement,
     onPlaceSelected?: (location: Location) => void
-  ): google.maps.places.PlaceAutocompleteElement {
-    // Create the new autocomplete element
-    const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement({});
+  ): google.maps.places.Autocomplete {
+    // Create an input element
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Enter a location';
+    input.className = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500';
 
-    // Style the autocomplete element to match our input
-    (placeAutocomplete as HTMLElement).style.width = '100%';
-
-    // Clear the container and add the new element
+    // Clear the container and add the input
     inputContainer.innerHTML = '';
-    inputContainer.appendChild(placeAutocomplete);
+    inputContainer.appendChild(input);
 
-    // Listen for place selection using gmp-select event
+    // Create the autocomplete widget
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+      fields: ['geometry', 'name'],
+      types: ['geocode', 'establishment'],
+    });
+
+    // Listen for place selection
     if (onPlaceSelected) {
-      placeAutocomplete.addEventListener('gmp-select', async (event: any) => {
-        try {
-          // Get the place prediction from the event
-          const placePrediction = event.placePrediction;
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
 
-          if (placePrediction) {
-            // Convert prediction to place
-            const place = placePrediction.toPlace();
-
-            // Fetch the location field
-            await place.fetchFields({ fields: ['location'] });
-
-            if (place.location) {
-              const location: Location = {
-                lat: place.location.lat(),
-                lng: place.location.lng(),
-              };
-              onPlaceSelected(location);
-            }
-          }
-        } catch (error) {
-          console.error('Error processing place selection:', error);
+        if (place.geometry && place.geometry.location) {
+          const location: Location = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+          };
+          onPlaceSelected(location);
         }
       });
     }
 
-    return placeAutocomplete;
+    return autocomplete;
   }
 }
