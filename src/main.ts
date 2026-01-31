@@ -81,8 +81,6 @@ function getCurrentDistance(): number {
 }
 
 // Setup autocomplete with new PlaceAutocompleteElement
-let placeAutocomplete: google.maps.places.PlaceAutocompleteElement;
-
 async function initAutocomplete(): Promise<void> {
   try {
     // Load Google Maps API first
@@ -100,7 +98,7 @@ async function initAutocomplete(): Promise<void> {
     inputParent.replaceChild(autocompleteContainer, locationInput);
 
     // Create the new PlaceAutocompleteElement
-    placeAutocomplete = routeMap.createPlaceAutocomplete(
+    routeMap.createPlaceAutocomplete(
       autocompleteContainer,
       (location) => {
         state.location = location;

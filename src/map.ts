@@ -183,7 +183,7 @@ export class RouteMap {
     onPlaceSelected?: (location: Location) => void
   ): google.maps.places.PlaceAutocompleteElement {
     // Create the new autocomplete element
-    const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+    const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement({});
 
     // Style the autocomplete element to match our input
     (placeAutocomplete as HTMLElement).style.width = '100%';
