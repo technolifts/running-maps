@@ -17,19 +17,24 @@ export function loadGoogleMapsAPI(): Promise<void> {
       return;
     }
 
-    // Create script element
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
-    script.async = true;
-    script.defer = true;
+    // Create a unique callback name
+    const callbackName = `initGoogleMaps_${Date.now()}`;
 
-    // Handle successful load
-    script.onload = () => {
+    // Set up the callback
+    (window as any)[callbackName] = () => {
+      delete (window as any)[callbackName];
       resolve();
     };
 
+    // Create script element with callback
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=${callbackName}`;
+    script.async = true;
+    script.defer = true;
+
     // Handle errors
     script.onerror = () => {
+      delete (window as any)[callbackName];
       reject(new Error('Failed to load Google Maps API'));
     };
 
