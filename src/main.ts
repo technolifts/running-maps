@@ -108,8 +108,8 @@ async function initAutocomplete(): Promise<void> {
       }
     );
   } catch (error) {
-    showError('Failed to initialize map. Please check your API key.');
-    console.error(error);
+    showError('Failed to initialize map. Please refresh the page or check your connection.');
+    console.error('Map initialization error:', error);
   }
 }
 
