@@ -40,13 +40,15 @@ class handler(BaseHTTPRequestHandler):
             # Build waypoints
             waypoints = []
             for place in selected_places:
-                waypoints.append(f"{place['lat']},{place['lng']}")
+                loc = place.get('location', {})
+                waypoints.append(f"{loc['lat']},{loc['lng']}")
 
             # Handle single place (out-and-back)
             if len(selected_places) == 1:
                 # For out-and-back, just go to the place and return
                 waypoints = []
-                destination = f"{selected_places[0]['lat']},{selected_places[0]['lng']}"
+                loc = selected_places[0].get('location', {})
+                destination = f"{loc['lat']},{loc['lng']}"
 
             # Call Google Directions API
             directions_result = gmaps.directions(
@@ -96,7 +98,7 @@ class handler(BaseHTTPRequestHandler):
                 )
             else:
                 # Loop route
-                waypoint_str = '|'.join([f"{p['lat']},{p['lng']}" for p in ordered_places])
+                waypoint_str = '|'.join([f"{p['location']['lat']},{p['location']['lng']}" for p in ordered_places])
                 maps_url = (
                     f"https://www.google.com/maps/dir/"
                     f"?api=1"

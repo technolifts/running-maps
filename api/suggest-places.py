@@ -14,19 +14,20 @@ class handler(BaseHTTPRequestHandler):
             params = json.loads(post_data.decode('utf-8'))
 
             # Extract parameters
-            lat = float(params.get('lat'))
-            lng = float(params.get('lng'))
+            location = params.get('location', {})
+            lat = float(location.get('lat'))
+            lng = float(location.get('lng'))
             distance_miles = float(params.get('distance_miles', 3))
             preferences = params.get('preferences', {})
 
             # Initialize Google Maps client
-            api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
+            api_key = os.environ.get('GOOGLE_PLACES_API_KEY')
             if not api_key:
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({
-                    'error': 'Google Maps API key not configured'
+                    'error': 'Google Places API key not configured'
                 }).encode())
                 return
 
