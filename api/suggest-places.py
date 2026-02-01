@@ -79,7 +79,7 @@ class handler(BaseHTTPRequestHandler):
                 distance = calculate_distance(lat, lng, place_lat, place_lng)
 
                 scored_places.append({
-                    'place_id': place.get('place_id'),
+                    'id': place.get('place_id'),
                     'name': place.get('name'),
                     'types': place.get('types', []),
                     'rating': place.get('rating'),
@@ -89,7 +89,7 @@ class handler(BaseHTTPRequestHandler):
                         'lat': place_lat,
                         'lng': place_lng
                     },
-                    'distance_miles': round(distance, 2),
+                    'distance_from_start': round(distance, 2),
                     'score': score,
                     'photo_reference': place.get('photos', [{}])[0].get('photo_reference') if place.get('photos') else None
                 })
