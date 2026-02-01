@@ -33,6 +33,25 @@ export class RouteMap {
     this.markers = [];
   }
 
+  private getCategoryForPlace(place: Place): { label: string; color: string } {
+    const primaryType = place.types[0] || 'place';
+    const typeLabel = primaryType.replace(/_/g, ' ');
+
+    const categoryColors: Record<string, string> = {
+      park: '#10B981',
+      museum: '#8B5CF6',
+      restaurant: '#F59E0B',
+      cafe: '#F59E0B',
+      tourist_attraction: '#06B6D4',
+      art_gallery: '#8B5CF6',
+    };
+
+    return {
+      label: typeLabel,
+      color: categoryColors[primaryType] || '#9CA3AF',
+    };
+  }
+
   /**
    * Display place markers on the map
    */
@@ -49,28 +68,57 @@ export class RouteMap {
 
     places.forEach((place) => {
       const isSelected = preselected.includes(place.id);
+      const category = this.getCategoryForPlace(place);
 
       const marker = new google.maps.Marker({
         position: place.location,
         map: this.map!,
         title: place.id,
-        icon: isSelected
-          ? {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 10,
-              fillColor: '#3B82F6',
-              fillOpacity: 1,
-              strokeColor: '#FFFFFF',
-              strokeWeight: 2,
-            }
-          : {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: '#9CA3AF',
-              fillOpacity: 0.8,
-              strokeColor: '#FFFFFF',
-              strokeWeight: 2,
-            },
+        animation: google.maps.Animation.DROP,
+        cursor: 'pointer',
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: isSelected ? 10 : 8,
+          fillColor: isSelected ? '#3B82F6' : category.color,
+          fillOpacity: isSelected ? 1 : 0.8,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2,
+        },
+      });
+
+      // Info window on hover
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div class="p-2">
+            <p class="font-semibold text-gray-900">${place.name}</p>
+            <p class="text-sm text-gray-600 capitalize">${category.label}</p>
+            <p class="text-xs text-gray-500">${place.distance_from_start.toFixed(1)} mi away</p>
+          </div>
+        `
+      });
+
+      marker.addListener('mouseover', () => {
+        infoWindow.open(this.map, marker);
+        marker.setIcon({
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: isSelected ? 12 : 10,
+          fillColor: isSelected ? '#3B82F6' : category.color,
+          fillOpacity: isSelected ? 1 : 0.8,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2,
+        });
+      });
+
+      marker.addListener('mouseout', () => {
+        infoWindow.close();
+        marker.setIcon({
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: isSelected ? 10 : 8,
+          fillColor: isSelected ? '#3B82F6' : category.color,
+          fillOpacity: isSelected ? 1 : 0.8,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2,
+        });
       });
 
       if (onMarkerClick) {
@@ -185,8 +233,8 @@ export class RouteMap {
     // Create an input element
     const input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = 'Enter a location';
-    input.className = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500';
+    input.placeholder = 'Search for a city or address...';
+    input.className = 'w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200';
 
     // Clear the container and add the input
     inputContainer.innerHTML = '';
