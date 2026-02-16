@@ -137,8 +137,20 @@ def calculate_score(place, preferences, start_lat, start_lng, max_radius):
     user_ratings_total = place.get('user_ratings_total', 1)
     types = place.get('types', [])
 
+    # Determine popularity tier based on review count
+    if user_ratings_total >= 10000:
+        popularity_multiplier = 5.0      # Mega-popular (Central Park, Times Square)
+    elif user_ratings_total >= 2000:
+        popularity_multiplier = 3.0      # Very popular
+    elif user_ratings_total >= 500:
+        popularity_multiplier = 2.0      # Popular
+    elif user_ratings_total >= 100:
+        popularity_multiplier = 1.3      # Moderate
+    else:
+        popularity_multiplier = 1.0      # Niche
+
     # Base score from rating and popularity
-    score = rating * (1 + math.log10(max(user_ratings_total, 1)) / 10)
+    score = rating * popularity_multiplier
 
     # Type bonuses (MULTIPLICATIVE)
     if any(t in types for t in ['tourist_attraction', 'landmark', 'monument']):
