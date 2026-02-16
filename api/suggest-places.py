@@ -164,9 +164,9 @@ def calculate_score(place, preferences, start_lat, start_lng, max_radius):
 
     # Apply user preferences
     if preferences.get('prefer_parks') and 'park' in types:
-        score *= 1.5
+        score *= 3.5  # Increased from 1.5 to allow parks to beat landmarks
     if preferences.get('urban_explorer') and any(t in types for t in ['museum', 'art_gallery', 'historical']):
-        score *= 1.5
+        score *= 3.5  # Increased from 1.5 for consistency with prefer_parks
 
     # Distance penalty (prefer closer to start)
     location = place.get('geometry', {}).get('location', {})
