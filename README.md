@@ -266,10 +266,13 @@ Finds and ranks points of interest near a location.
 
 **Algorithm:**
 The endpoint searches for places within a radius of 50% of the running distance, queries multiple place types (landmarks, parks, museums, etc.), deduplicates results, and scores each place based on:
-- Google rating and popularity (user_ratings_total)
-- Place type bonuses (landmarks weighted higher than cafes)
-- User preferences (parks boosted if prefer_parks is true)
+- **Popularity tiers** (mega-popular ≥10k reviews: 5x, very popular 2-10k: 3x, popular 500-2k: 2x, moderate 100-500: 1.3x, niche <100: 1x)
+- Google rating (combined with popularity tier for base score)
+- Place type bonuses (landmarks 3x, parks 1.2x, cafes 0.5x)
+- User preferences (parks/museums boosted 3.5x if prefer_parks/urban_explorer enabled - can override type hierarchy)
 - Distance from start (closer places weighted slightly higher)
+
+Popular places like Central Park and Times Square now rank significantly higher than lesser-known locations.
 
 ### POST /api/generate-route
 
