@@ -30,6 +30,7 @@ const distanceCustom = document.getElementById('distance-custom') as HTMLInputEl
 const prefParks = document.getElementById('pref-parks') as HTMLInputElement;
 const prefWater = document.getElementById('pref-water') as HTMLInputElement;
 const prefUrban = document.getElementById('pref-urban') as HTMLInputElement;
+const prefTrail = document.getElementById('pref-trail') as HTMLInputElement;
 const findPlacesBtn = document.getElementById('find-places-btn') as HTMLButtonElement;
 const mapSection = document.getElementById('map-section') as HTMLDivElement;
 const placesSection = document.getElementById('places-section') as HTMLDivElement;
@@ -127,6 +128,7 @@ function getPreferences(): Preferences {
     prefer_parks: prefParks.checked,
     water_stops: prefWater.checked,
     urban_explorer: prefUrban.checked,
+    trail_runner: prefTrail.checked,
   };
 }
 
@@ -140,6 +142,8 @@ function getCurrentDistance(): number {
 function getCategoryColor(type: string): string {
   const colors: Record<string, string> = {
     park: 'bg-green-50 text-green-700 border-green-200',
+    hiking_area: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    nature_preserve: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     museum: 'bg-purple-50 text-purple-700 border-purple-200',
     restaurant: 'bg-amber-50 text-amber-700 border-amber-200',
     cafe: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -152,6 +156,8 @@ function getCategoryColor(type: string): string {
 function getCategoryIcon(type: string): string {
   const icons: Record<string, string> = {
     park: '🌳',
+    hiking_area: '🥾',
+    nature_preserve: '🌿',
     museum: '🏛️',
     restaurant: '🍽️',
     cafe: '☕',
@@ -172,6 +178,10 @@ function getPreferenceMatch(place: Place, prefs: Preferences): string {
   if (prefs.urban_explorer &&
       place.types.some(t => t === 'museum' || t === 'art_gallery' || t === 'tourist_attraction')) {
     matches.push('Urban Explorer');
+  }
+  if (prefs.trail_runner &&
+      place.types.some(t => ['hiking_area', 'nature_preserve', 'park', 'natural_feature'].includes(t))) {
+    matches.push('Trail Runner');
   }
 
   if (matches.length > 0) {
@@ -258,6 +268,7 @@ document.querySelectorAll('.preference-chip').forEach(chip => {
     if (pref === 'parks') prefParks.checked = chip.classList.contains('active');
     if (pref === 'water') prefWater.checked = chip.classList.contains('active');
     if (pref === 'urban') prefUrban.checked = chip.classList.contains('active');
+    if (pref === 'trail') prefTrail.checked = chip.classList.contains('active');
   });
 });
 

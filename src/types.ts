@@ -20,6 +20,7 @@ export interface Preferences {
   avoid_hills?: boolean;
   water_stops?: boolean;
   urban_explorer?: boolean;
+  trail_runner?: boolean;
 }
 
 export interface SuggestPlacesRequest {

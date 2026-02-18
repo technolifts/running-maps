@@ -45,6 +45,9 @@ class handler(BaseHTTPRequestHandler):
             if preferences.get('water_stops'):
                 place_types.append(['cafe', 'restaurant'])
 
+            if preferences.get('trail_runner'):
+                place_types.insert(0, ['hiking_area', 'nature_preserve'])
+
             # Collect all places
             all_places = []
             seen_place_ids = set()
@@ -161,12 +164,27 @@ def calculate_score(place, preferences, start_lat, start_lng, max_radius):
         score *= 1.2
     if any(t in types for t in ['cafe', 'restaurant']):
         score *= 0.5
+    if any(t in types for t in ['hiking_area', 'nature_preserve']):
+        score *= 2.5
 
     # Apply user preferences
     if preferences.get('prefer_parks') and 'park' in types:
         score *= 3.5  # Increased from 1.5 to allow parks to beat landmarks
     if preferences.get('urban_explorer') and any(t in types for t in ['museum', 'art_gallery', 'historical']):
         score *= 3.5  # Increased from 1.5 for consistency with prefer_parks
+    if preferences.get('trail_runner'):
+        if any(t in types for t in ['hiking_area', 'nature_preserve']):
+            score *= 4.0
+        elif 'park' in types or 'natural_feature' in types:
+            score *= 2.5
+        elif any(t in types for t in ['museum', 'art_gallery', 'tourist_attraction', 'landmark']):
+            score *= 0.3
+
+    # FUTURE EXTENSION POINT:
+    # When OpenStreetMap integration is added, inject OSM trail scores here.
+    # OSM trails (highway=path, highway=footway) will receive a direct score boost
+    # and carry metadata (surface type, car-free status) unavailable from Google Places.
+    # See: https://wiki.openstreetmap.org/wiki/Overpass_API
 
     # Distance penalty (prefer closer to start)
     location = place.get('geometry', {}).get('location', {})
