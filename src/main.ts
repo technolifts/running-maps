@@ -662,3 +662,50 @@ startOverBtn.addEventListener('click', () => {
 
 // Initialize
 initAutocomplete();
+
+// Geolocation handler
+const useLocationBtn = document.getElementById('use-location-btn') as HTMLButtonElement;
+
+useLocationBtn?.addEventListener('click', async () => {
+  if (!navigator.geolocation) {
+    showError('Geolocation is not supported by your browser');
+    return;
+  }
+
+  useLocationBtn.disabled = true;
+  useLocationBtn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>';
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords;
+      state.location = { lat: latitude, lng: longitude };
+
+      // Reverse geocode to get city name
+      try {
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&result_type=locality&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
+        const res = await fetch(geocodeUrl);
+        const data = await res.json();
+        const cityName = data.results[0]?.formatted_address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+        // Fill the autocomplete input
+        const input = document.querySelector('#location-autocomplete-container input') as HTMLInputElement;
+        if (input) input.value = cityName;
+      } catch {
+        const input = document.querySelector('#location-autocomplete-container input') as HTMLInputElement;
+        if (input) input.value = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      }
+
+      findPlacesBtn.disabled = false;
+      useLocationBtn.disabled = false;
+      useLocationBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>';
+    },
+    (error) => {
+      if (error.code === error.PERMISSION_DENIED) {
+        showEnhancedError({ title: 'Location permission denied', message: 'Please type your city above.', type: 'info' });
+      } else {
+        showError('Could not get your location. Please type your city.');
+      }
+      useLocationBtn.disabled = false;
+    }
+  );
+});
