@@ -557,6 +557,38 @@ generateRouteBtn.addEventListener('click', async () => {
   }
 });
 
+/**
+ * Generates a personalized route name from location and first place.
+ */
+function generateRouteName(locationName: string, firstPlace: string): string {
+  let name = firstPlace.replace(/^the /i, '').replace(/ (park|museum|gallery|bridge|square)$/i, '');
+  const city = locationName.split(',')[0].trim();
+  return `Your ${city} ${name} Run`;
+}
+
+/**
+ * Spawns 20 CSS confetti pieces inside the route section container.
+ * One-shot: each piece removes itself after the animation completes.
+ */
+function triggerConfetti(): void {
+  const colors = ['#3B82F6', '#14B8A6', '#22C55E', '#A855F7', '#F59E0B'];
+  const container = document.getElementById('route-section');
+  if (!container) return;
+
+  for (let i = 0; i < 20; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.cssText = `
+      left: ${Math.random() * 100}%;
+      top: 0;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      animation-delay: ${Math.random() * 0.3}s;
+    `;
+    container.appendChild(piece);
+    setTimeout(() => piece.remove(), 1500);
+  }
+}
+
 function displayRouteSummary(): void {
   if (!state.generatedRoute) return;
 
@@ -577,6 +609,17 @@ function displayRouteSummary(): void {
   `;
 
   openMapsBtn.href = google_maps_url;
+
+  // Auto-named route heading
+  const routeNameEl = document.getElementById('route-name') as HTMLHeadingElement | null;
+  if (routeNameEl && state.location && optimized_order.length > 0) {
+    const locationInput = (document.querySelector('#location-autocomplete-container input') as HTMLInputElement | null)?.value ?? '';
+    const name = generateRouteName(locationInput, optimized_order[0].name);
+    routeNameEl.textContent = name;
+    routeNameEl.classList.remove('hidden');
+  }
+
+  triggerConfetti();
 }
 
 // Route action handlers
