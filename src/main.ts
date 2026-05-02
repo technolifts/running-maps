@@ -305,6 +305,16 @@ findPlacesBtn.addEventListener('click', async () => {
 
   showLoading();
 
+  // Show skeleton placeholders immediately while fetching
+  const skeletonTemplate = document.getElementById('place-skeleton-template') as HTMLTemplateElement;
+  if (skeletonTemplate) {
+    placesList.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+      placesList.appendChild(skeletonTemplate.content.cloneNode(true));
+    }
+    mapSection.classList.remove('hidden');
+  }
+
   try {
     const preferences = getPreferences();
     const distance = getCurrentDistance();
