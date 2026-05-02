@@ -100,6 +100,11 @@
   }
 }
 
+gmp-place-autocomplete {
+  display: block;
+  width: 100%;
+}
+
 @media (max-width: 640px) {
   #map {
     height: 50vh !important;
