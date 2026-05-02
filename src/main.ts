@@ -3,6 +3,7 @@ import { RouteMap } from './map';
 import { suggestPlaces, generateRoute } from './api';
 import { loadGoogleMapsAPI } from './google-maps-loader';
 import type { AppState, Place, Preferences } from './types';
+import { fetchWeather, getWeatherWarning } from './weather';
 
 // Analytics tracking
 function track(event: string, properties?: Record<string, any>): void {
@@ -46,6 +47,9 @@ const shareBtn = document.getElementById('share-btn') as HTMLButtonElement;
 const editSelectionsBtn = document.getElementById('edit-selections-btn') as HTMLButtonElement;
 const startOverBtn = document.getElementById('start-over-btn') as HTMLButtonElement;
 const toggleMapSizeBtn = document.getElementById('toggle-map-size') as HTMLButtonElement;
+const weatherWidget = document.getElementById('weather-widget') as HTMLDivElement;
+const weatherInfo = document.getElementById('weather-info') as HTMLSpanElement;
+const weatherWarning = document.getElementById('weather-warning') as HTMLSpanElement;
 const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement;
@@ -538,6 +542,20 @@ generateRouteBtn.addEventListener('click', async () => {
     // Display route summary
     displayRouteSummary();
 
+    // Non-blocking weather fetch
+    if (state.location) {
+      fetchWeather(state.location.lat, state.location.lng).then(weather => {
+        if (!weather) return;
+        weatherWidget.classList.remove('hidden');
+        weatherInfo.textContent = `${weather.temp_f}°F · ${weather.condition} · ${weather.wind_mph}mph wind`;
+        const warning = getWeatherWarning(weather);
+        if (warning) {
+          weatherWarning.textContent = warning;
+          weatherWarning.classList.remove('hidden');
+        }
+      });
+    }
+
     routeSection.classList.remove('hidden');
     placesSection.classList.add('hidden');
     updateProgress('route');
@@ -635,6 +653,9 @@ startOverBtn.addEventListener('click', () => {
   routeSection.classList.add('hidden');
   mapSection.classList.add('hidden');
   progressNav.classList.add('hidden');
+  weatherWidget.classList.add('hidden');
+  weatherWarning.classList.add('hidden');
+  weatherInfo.textContent = '';
 
   // Reset preference chips
   document.querySelectorAll('.preference-chip').forEach(chip => {
