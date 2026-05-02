@@ -109,6 +109,39 @@ class handler(BaseHTTPRequestHandler):
                     'photo_reference': place.get('photos', [{}])[0].get('photo_reference') if place.get('photos') else None
                 })
 
+            # Apply elevation penalties when avoid_hills is enabled
+            if preferences.get('avoid_hills') and all_places:
+                try:
+                    # Batch elevation request for all candidate places
+                    locations_for_elevation = [
+                        (p['geometry']['location']['lat'], p['geometry']['location']['lng'])
+                        for p in all_places
+                    ]
+                    # Insert start point at index 0 as elevation reference
+                    locations_for_elevation.insert(0, (lat, lng))
+
+                    elevation_results = gmaps.elevation(locations_for_elevation)
+
+                    if elevation_results:
+                        start_elevation = elevation_results[0]['elevation']
+                        # Build place_id -> elevation_gain dict (results[1:] correspond to all_places[0:])
+                        elevation_by_place_id = {}
+                        for i, result in enumerate(elevation_results[1:]):
+                            place_id = all_places[i].get('place_id')
+                            if place_id:
+                                elevation_gain = max(0, result['elevation'] - start_elevation)
+                                elevation_by_place_id[place_id] = elevation_gain
+
+                        # Apply penalty to scored_places
+                        for scored in scored_places:
+                            elevation_gain = elevation_by_place_id.get(scored['id'])
+                            if elevation_gain is not None:
+                                penalty = max(0.3, 1 - elevation_gain * 0.01)
+                                scored['score'] *= penalty
+                except Exception as e:
+                    # Graceful fallback - elevation API failure doesn't break the route
+                    print(f"Elevation API error (non-fatal): {str(e)}")
+
             # Sort by score (descending) and return top 15
             scored_places.sort(key=lambda x: x['score'], reverse=True)
             top_places = scored_places[:15]
