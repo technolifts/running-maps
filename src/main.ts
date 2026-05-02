@@ -374,6 +374,24 @@ findPlacesBtn.addEventListener('click', async () => {
   }
 });
 
+/**
+ * Scrolls the place card for the given placeId into view and briefly
+ * pulses it with an amber highlight so the user can find it easily.
+ */
+function scrollToCard(placeId: string): void {
+  const card = placesList.querySelector(`[data-place-id="${placeId}"]`) as HTMLElement | null;
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    card.classList.add('card-highlight');
+    setTimeout(() => card.classList.remove('card-highlight'), 2100);
+  }
+}
+
+const markerClickHandler = (placeId: string): void => {
+  togglePlaceSelection(placeId);
+  scrollToCard(placeId);
+};
+
 // Display places on map and in list
 function displayPlaces(): void {
   if (!state.location) return;
@@ -381,7 +399,7 @@ function displayPlaces(): void {
   routeMap.showPlaces(
     state.suggestedPlaces,
     Array.from(state.selectedPlaceIds),
-    togglePlaceSelection
+    markerClickHandler
   );
 
   placesList.innerHTML = '';
@@ -397,6 +415,7 @@ function displayPlaces(): void {
 function createPlaceCard(place: Place, selected: boolean): HTMLElement {
   const card = document.createElement('div');
   card.className = 'place-card group bg-white rounded-lg border-2 border-gray-200 p-4 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer';
+  card.dataset.placeId = place.id;
 
   const primaryType = place.types[0] || 'place';
   const typeLabel = primaryType.replace(/_/g, ' ');
