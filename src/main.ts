@@ -410,6 +410,7 @@ function createPlaceCard(place: Place, selected: boolean): HTMLElement {
         ${place.photo_url ? `
           <img src="${place.photo_url}"
                alt="${place.name}"
+               loading="lazy"
                class="w-32 h-32 rounded-lg object-cover group-hover:scale-105 transition-transform duration-300" />
           <span class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs
                        bg-white/90 backdrop-blur-sm font-medium border
@@ -448,6 +449,18 @@ function createPlaceCard(place: Place, selected: boolean): HTMLElement {
              class="w-5 h-5 text-blue-600 rounded self-start" />
     </div>
   `;
+
+  const img = card.querySelector('img');
+  if (img) {
+    img.setAttribute('loading', 'lazy');
+    img.onerror = () => {
+      const icon = getCategoryIcon(primaryType);
+      const placeholder = document.createElement('div');
+      placeholder.className = 'w-32 h-32 rounded-lg bg-gray-100 flex items-center justify-center text-4xl';
+      placeholder.textContent = icon;
+      img.replaceWith(placeholder);
+    };
+  }
 
   const checkbox = card.querySelector('input') as HTMLInputElement;
   checkbox.addEventListener('change', (e) => {
