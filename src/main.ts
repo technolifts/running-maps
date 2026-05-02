@@ -4,6 +4,7 @@ import { suggestPlaces, generateRoute } from './api';
 import { loadGoogleMapsAPI } from './google-maps-loader';
 import { generateGPX, downloadGPX } from './gpx-export';
 import type { AppState, Place, Preferences } from './types';
+import { encodeRoute, decodeRoute } from './route-serializer';
 
 // Analytics tracking
 function track(event: string, properties?: Record<string, any>): void {
@@ -219,6 +220,41 @@ async function initAutocomplete(): Promise<void> {
         updateProgress('location');
       }
     );
+
+    // Load route from URL param if present
+    const urlParams = new URLSearchParams(window.location.search);
+    const routeParam = urlParams.get('r');
+    if (routeParam) {
+      const restored = decodeRoute(routeParam);
+      if (restored) {
+        state.location = restored.location;
+        state.distance = restored.distanceMiles;
+        state.preferences = restored.preferences;
+        state.suggestedPlaces = restored.places;
+        state.selectedPlaceIds = new Set(restored.selectedPlaceIds);
+
+        // Update distance select
+        const distValues = ['3', '5', '7', '10', '13.1', '15', '26.2'];
+        if (distValues.includes(String(restored.distanceMiles))) {
+          distanceSelect.value = String(restored.distanceMiles);
+        } else {
+          distanceSelect.value = 'custom';
+          distanceCustom.classList.remove('hidden');
+          distanceCustom.value = String(restored.distanceMiles);
+        }
+
+        // Update preference checkboxes
+        if (restored.preferences.prefer_parks) { prefParks.checked = true; document.querySelector('[data-pref="parks"]')?.classList.add('active'); }
+        if (restored.preferences.water_stops) { prefWater.checked = true; document.querySelector('[data-pref="water"]')?.classList.add('active'); }
+        if (restored.preferences.urban_explorer) { prefUrban.checked = true; document.querySelector('[data-pref="urban"]')?.classList.add('active'); }
+        if (restored.preferences.trail_runner) { prefTrail.checked = true; document.querySelector('[data-pref="trail"]')?.classList.add('active'); }
+
+        findPlacesBtn.disabled = false;
+        displayPlaces();
+        mapSection.classList.remove('hidden');
+        updateProgress('places');
+      }
+    }
 
     // Hide initial loader
     if (initLoader) {
@@ -594,15 +630,21 @@ openMapsBtn.addEventListener('click', () => {
   track('maps_opened');
 });
 copyLinkBtn.addEventListener('click', async () => {
-  if (!state.generatedRoute) return;
+  if (!state.generatedRoute || !state.location) return;
 
   try {
-    await navigator.clipboard.writeText(state.generatedRoute.google_maps_url);
+    const encoded = encodeRoute({
+      location: state.location,
+      distanceMiles: state.distance,
+      preferences: state.preferences,
+      selectedPlaceIds: Array.from(state.selectedPlaceIds),
+      places: state.suggestedPlaces,
+    });
+    const shareUrl = `${window.location.origin}${window.location.pathname}?r=${encoded}`;
+    await navigator.clipboard.writeText(shareUrl);
     track('link_copied');
     copyLinkBtn.textContent = 'Copied!';
-    setTimeout(() => {
-      copyLinkBtn.textContent = 'Copy Link';
-    }, 2000);
+    setTimeout(() => { copyLinkBtn.textContent = 'Copy Link'; }, 2000);
   } catch (error) {
     showError('Failed to copy link');
   }
