@@ -19,6 +19,7 @@ class handler(BaseHTTPRequestHandler):
             lng = float(location.get('lng'))
             distance_miles = float(params.get('distance_miles', 3))
             preferences = params.get('preferences', {})
+            strategy = params.get('strategy', 'iconic')  # 'iconic' | 'scenic' | 'efficient'
 
             # Initialize Google Maps client
             api_key = os.environ.get('GOOGLE_PLACES_API_KEY')
@@ -81,7 +82,7 @@ class handler(BaseHTTPRequestHandler):
                 if place.get('business_status') == 'CLOSED_PERMANENTLY':
                     continue
 
-                score = calculate_score(place, preferences, lat, lng, radius_meters, max_reviews)
+                score = calculate_score(place, preferences, lat, lng, radius_meters, max_reviews, strategy)
 
                 # Down-rank currently closed places
                 opening_hours = place.get('opening_hours', {})
@@ -179,7 +180,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
 
-def calculate_score(place, preferences, start_lat, start_lng, max_radius, max_reviews=10000):
+def calculate_score(place, preferences, start_lat, start_lng, max_radius, max_reviews=10000, strategy='iconic'):
     """Calculate score for a place based on type and preferences"""
     rating = place.get('rating', 3.0)
     user_ratings_total = place.get('user_ratings_total', 1)
@@ -235,6 +236,25 @@ def calculate_score(place, preferences, start_lat, start_lng, max_radius, max_re
             score *= 2.5
         elif any(t in types for t in ['museum', 'art_gallery', 'tourist_attraction', 'landmark']):
             score *= 0.3
+
+    # Strategy-specific scoring
+    if strategy == 'scenic':
+        if any(t in types for t in ['park', 'natural_feature', 'hiking_area', 'nature_preserve']):
+            score *= 4.0
+        elif 'waterfront' in types or 'beach' in types:
+            score *= 4.0
+        if any(t in types for t in ['tourist_attraction', 'landmark', 'monument']):
+            score *= 0.5
+    elif strategy == 'efficient':
+        # Efficient: minimize detour — heavily penalize places far from direct path
+        # Use a tighter distance factor (0.7 instead of 0.3)
+        location = place.get('geometry', {}).get('location', {})
+        distance = calculate_distance(start_lat, start_lng, location.get('lat'), location.get('lng'))
+        distance_meters = distance * 1609.34
+        if max_radius > 0:
+            detour_penalty = max(0.1, 1 - (distance_meters / max_radius) * 0.7)
+            score *= detour_penalty
+    # iconic: keep existing scoring (no changes)
 
     # FUTURE EXTENSION POINT:
     # When OpenStreetMap integration is added, inject OSM trail scores here.

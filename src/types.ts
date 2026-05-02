@@ -23,10 +23,13 @@ export interface Preferences {
   trail_runner?: boolean;
 }
 
+export type RouteStrategy = 'iconic' | 'scenic' | 'efficient';
+
 export interface SuggestPlacesRequest {
   location: Location;
   distance_miles: number;
   preferences?: Preferences;
+  strategy?: RouteStrategy;
 }
 
 export interface SuggestPlacesResponse {
@@ -61,4 +64,6 @@ export interface AppState {
   suggestedPlaces: Place[];
   selectedPlaceIds: Set<string>;
   generatedRoute: RouteResponse | null;
+  routeAlternatives: Record<string, { places: Place[]; route: RouteResponse | null }>;
+  activeStrategy: RouteStrategy;
 }
