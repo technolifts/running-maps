@@ -222,45 +222,31 @@ export class RouteMap {
     }
   }
 
-  /**
-   * Create classic Autocomplete widget for an input element
-   * Uses the legacy Places API which works with HTTP referrer restrictions
-   */
   createPlaceAutocomplete(
     inputContainer: HTMLElement,
     onPlaceSelected?: (location: Location) => void
-  ): google.maps.places.Autocomplete {
-    // Create an input element
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Search for a city or address...';
-    input.className = 'w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200';
-
-    // Clear the container and add the input
+  ): void {
     inputContainer.innerHTML = '';
-    inputContainer.appendChild(input);
 
-    // Create the autocomplete widget
-    const autocomplete = new google.maps.places.Autocomplete(input, {
-      fields: ['geometry', 'name'],
+    const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement({
       types: ['geocode', 'establishment'],
-    });
+    } as any);
 
-    // Listen for place selection
+    (placeAutocomplete as HTMLElement).style.width = '100%';
+    inputContainer.appendChild(placeAutocomplete as unknown as HTMLElement);
+
     if (onPlaceSelected) {
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
+      placeAutocomplete.addEventListener('gmp-placeselect', async (event: Event) => {
+        const place = (event as any).place as google.maps.places.Place;
+        await place.fetchFields({ fields: ['location', 'displayName'] });
 
-        if (place.geometry && place.geometry.location) {
-          const location: Location = {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-          };
-          onPlaceSelected(location);
+        if (place.location) {
+          onPlaceSelected({
+            lat: place.location.lat(),
+            lng: place.location.lng(),
+          });
         }
       });
     }
-
-    return autocomplete;
   }
 }
