@@ -178,6 +178,9 @@
           <button id="share-btn" class="btn-secondary">
             Share
           </button>
+          <button id="save-route-btn" class="btn-secondary">
+            Save Route
+          </button>
         </div>
         <div class="flex gap-3 mt-4">
           <button id="edit-selections-btn" class="btn-secondary flex-1">
@@ -227,6 +230,12 @@
       </template>
     </main>
   </div>
+
+  <!-- My Routes Section -->
+  <section id="saved-routes-section" class="hidden max-w-2xl mx-auto px-4 pb-8">
+    <h2 class="text-xl font-bold text-gray-800 mb-3">My Routes</h2>
+    <div id="saved-routes-list" class="space-y-3"></div>
+  </section>
 
   <script type="module" src="/src/main.ts"></script>
 </body>
