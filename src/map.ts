@@ -33,23 +33,23 @@ export class RouteMap {
     this.markers = [];
   }
 
-  private getCategoryForPlace(place: Place): { label: string; color: string } {
+  private getCategoryForPlace(place: Place): { label: string; color: string; shape: google.maps.SymbolPath; scale: number } {
     const primaryType = place.types[0] || 'place';
     const typeLabel = primaryType.replace(/_/g, ' ');
 
-    const categoryColors: Record<string, string> = {
-      park: '#10B981',
-      museum: '#8B5CF6',
-      restaurant: '#F59E0B',
-      cafe: '#F59E0B',
-      tourist_attraction: '#06B6D4',
-      art_gallery: '#8B5CF6',
+    const typeConfig: Record<string, { color: string; shape: google.maps.SymbolPath; scale: number }> = {
+      park: { color: '#009E73', shape: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 6 },
+      hiking_area: { color: '#009E73', shape: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 6 },
+      nature_preserve: { color: '#009E73', shape: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 6 },
+      museum: { color: '#CC79A7', shape: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 6 },
+      art_gallery: { color: '#CC79A7', shape: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 6 },
+      restaurant: { color: '#F0E442', shape: google.maps.SymbolPath.CIRCLE, scale: 7 },
+      cafe: { color: '#F0E442', shape: google.maps.SymbolPath.CIRCLE, scale: 7 },
+      tourist_attraction: { color: '#E69F00', shape: google.maps.SymbolPath.CIRCLE, scale: 8 },
     };
 
-    return {
-      label: typeLabel,
-      color: categoryColors[primaryType] || '#9CA3AF',
-    };
+    const config = typeConfig[primaryType] || { color: '#E69F00', shape: google.maps.SymbolPath.CIRCLE, scale: 8 };
+    return { label: typeLabel, ...config };
   }
 
   /**
@@ -77,12 +77,12 @@ export class RouteMap {
         animation: google.maps.Animation.DROP,
         cursor: 'pointer',
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: isSelected ? 10 : 8,
-          fillColor: isSelected ? '#3B82F6' : category.color,
-          fillOpacity: isSelected ? 1 : 0.8,
+          path: isSelected ? google.maps.SymbolPath.CIRCLE : category.shape,
+          scale: isSelected ? 10 : category.scale,
+          fillColor: isSelected ? '#0066CC' : category.color,
+          fillOpacity: isSelected ? 1 : 0.85,
           strokeColor: '#FFFFFF',
-          strokeWeight: 2,
+          strokeWeight: isSelected ? 3 : 2,
         },
       });
 
@@ -100,24 +100,24 @@ export class RouteMap {
       marker.addListener('mouseover', () => {
         infoWindow.open(this.map, marker);
         marker.setIcon({
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: isSelected ? 12 : 10,
-          fillColor: isSelected ? '#3B82F6' : category.color,
-          fillOpacity: isSelected ? 1 : 0.8,
+          path: isSelected ? google.maps.SymbolPath.CIRCLE : category.shape,
+          scale: isSelected ? 12 : category.scale + 2,
+          fillColor: isSelected ? '#0066CC' : category.color,
+          fillOpacity: isSelected ? 1 : 0.85,
           strokeColor: '#FFFFFF',
-          strokeWeight: 2,
+          strokeWeight: isSelected ? 3 : 2,
         });
       });
 
       marker.addListener('mouseout', () => {
         infoWindow.close();
         marker.setIcon({
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: isSelected ? 10 : 8,
-          fillColor: isSelected ? '#3B82F6' : category.color,
-          fillOpacity: isSelected ? 1 : 0.8,
+          path: isSelected ? google.maps.SymbolPath.CIRCLE : category.shape,
+          scale: isSelected ? 10 : category.scale,
+          fillColor: isSelected ? '#0066CC' : category.color,
+          fillOpacity: isSelected ? 1 : 0.85,
           strokeColor: '#FFFFFF',
-          strokeWeight: 2,
+          strokeWeight: isSelected ? 3 : 2,
         });
       });
 
@@ -154,10 +154,10 @@ export class RouteMap {
           ? {
               path: google.maps.SymbolPath.CIRCLE,
               scale: 10,
-              fillColor: '#3B82F6',
+              fillColor: '#0066CC',
               fillOpacity: 1,
               strokeColor: '#FFFFFF',
-              strokeWeight: 2,
+              strokeWeight: 3,
             }
           : {
               path: google.maps.SymbolPath.CIRCLE,
