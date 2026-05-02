@@ -120,6 +120,36 @@ class handler(BaseHTTPRequestHandler):
                 'estimated_time_minutes': estimated_time_minutes
             }
 
+            # Sample elevation profile
+            elevation_profile = []
+            try:
+                # Use the overview polyline of the route for sampling
+                overview_polyline = route.get('overview_polyline', {}).get('points', '')
+                if overview_polyline:
+                    # Decode the polyline to get all points
+                    decoded_points = googlemaps.convert.decode_polyline(overview_polyline)
+
+                    # Sample 20 evenly spaced points
+                    total_points = len(decoded_points)
+                    if total_points > 0:
+                        indices = [int(i * (total_points - 1) / 19) for i in range(20)] if total_points >= 20 else list(range(total_points))
+                        sample_points = [(decoded_points[i]['lat'], decoded_points[i]['lng']) for i in indices]
+
+                        elevation_results = gmaps.elevation(sample_points)
+                        elevation_profile = [
+                            {
+                                'lat': r['location']['lat'],
+                                'lng': r['location']['lng'],
+                                'elevation_meters': round(r['elevation'], 1)
+                            }
+                            for r in elevation_results
+                        ]
+            except Exception as e:
+                print(f"Elevation profile error (non-fatal): {str(e)}")
+                elevation_profile = []
+
+            response['elevation_profile'] = elevation_profile
+
             # Send response
             self.send_response(200)
             self.send_header('Content-type', 'application/json')

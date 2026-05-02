@@ -40,11 +40,18 @@ export interface RouteRequest {
   pace_min_per_mile?: number;
 }
 
+export interface ElevationPoint {
+  lat: number;
+  lng: number;
+  elevation_meters: number;
+}
+
 export interface RouteResponse {
   distance_miles: number;
   optimized_order: Place[];
   google_maps_url: string;
   estimated_time_minutes: number;
+  elevation_profile?: ElevationPoint[];
 }
 
 export interface AppState {

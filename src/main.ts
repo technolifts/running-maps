@@ -603,6 +603,53 @@ generateRouteBtn.addEventListener('click', async () => {
   }
 });
 
+function renderElevationChart(profile: Array<{lat: number; lng: number; elevation_meters: number}>): string {
+  if (!profile || profile.length < 2) return '';
+
+  const elevations = profile.map(p => p.elevation_meters);
+  const minElev = Math.min(...elevations);
+  const maxElev = Math.max(...elevations);
+  const elevationGainFt = Math.round(
+    elevations.reduce((gain, e, i) => i > 0 && e > elevations[i-1] ? gain + (e - elevations[i-1]) : gain, 0) * 3.28084
+  );
+
+  if (maxElev - minElev < 5) {
+    return `<div class="mt-3 p-3 bg-green-50 rounded-lg text-sm text-green-700 text-center">Flat route — minimal elevation change</div>`;
+  }
+
+  const W = 280, H = 80, PAD = 4;
+  const range = maxElev - minElev || 1;
+  const points = elevations.map((e, i) => {
+    const x = PAD + (i / (elevations.length - 1)) * (W - PAD * 2);
+    const y = H - PAD - ((e - minElev) / range) * (H - PAD * 2);
+    return `${x},${y}`;
+  }).join(' ');
+
+  // Closed path for fill
+  const firstX = PAD;
+  const lastX = W - PAD;
+  const fillPoints = `${firstX},${H - PAD} ${points} ${lastX},${H - PAD}`;
+
+  return `
+    <div class="mt-3">
+      <div class="flex justify-between text-xs text-gray-500 mb-1">
+        <span>Elevation Profile</span>
+        <span class="font-medium text-orange-600">+${elevationGainFt} ft gain</span>
+      </div>
+      <svg width="${W}" height="${H}" class="w-full" viewBox="0 0 ${W} ${H}">
+        <defs>
+          <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f97316" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#22c55e" stop-opacity="0.1"/>
+          </linearGradient>
+        </defs>
+        <polygon points="${fillPoints}" fill="url(#elevGrad)"/>
+        <polyline points="${points}" fill="none" stroke="#f97316" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  `;
+}
+
 function displayRouteSummary(): void {
   if (!state.generatedRoute) return;
 
@@ -613,6 +660,8 @@ function displayRouteSummary(): void {
   const minutes = estimated_time_minutes % 60;
   const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes} minutes`;
 
+  const elevationHTML = renderElevationChart(state.generatedRoute.elevation_profile || []);
+
   routeSummary.innerHTML = `
     <p class="text-lg mb-2">
       <strong>${distance_miles} mile${distance_miles !== 1 ? 's' : ''}</strong>
@@ -620,6 +669,7 @@ function displayRouteSummary(): void {
     </p>
     <p class="text-gray-600 mb-2">${placeNames}</p>
     <p class="text-sm text-gray-500">Estimated time: ${timeStr}</p>
+    ${elevationHTML}
   `;
 
   openMapsBtn.href = google_maps_url;
