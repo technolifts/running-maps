@@ -111,12 +111,18 @@ class handler(BaseHTTPRequestHandler):
             # Calculate estimated time (15 min/mile)
             estimated_time_minutes = int(distance_miles * 15)
 
+            # Extract per-leg distances
+            leg_distances = []
+            for leg in route['legs']:
+                leg_distances.append(round(leg['distance']['value'] / 1609.34, 2))  # meters to miles
+
             # Build response
             response = {
                 'distance_miles': distance_miles,
                 'optimized_order': ordered_places,
                 'google_maps_url': maps_url,
-                'estimated_time_minutes': estimated_time_minutes
+                'estimated_time_minutes': estimated_time_minutes,
+                'leg_distances': leg_distances
             }
 
             # Send response

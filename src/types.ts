@@ -44,6 +44,7 @@ export interface RouteResponse {
   optimized_order: Place[];
   google_maps_url: string;
   estimated_time_minutes: number;
+  leg_distances?: number[];
 }
 
 export interface AppState {
