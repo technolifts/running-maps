@@ -71,6 +71,9 @@ class handler(BaseHTTPRequestHandler):
                         print(f"Error fetching {place_type}: {str(e)}")
                         continue
 
+            # Compute max review count for auto-calibration
+            max_reviews = max((p.get('user_ratings_total', 0) for p in all_places), default=0)
+
             # Score and rank places
             scored_places = []
             for place in all_places:
@@ -78,7 +81,7 @@ class handler(BaseHTTPRequestHandler):
                 if place.get('business_status') == 'CLOSED_PERMANENTLY':
                     continue
 
-                score = calculate_score(place, preferences, lat, lng, radius_meters)
+                score = calculate_score(place, preferences, lat, lng, radius_meters, max_reviews)
 
                 # Down-rank currently closed places
                 opening_hours = place.get('opening_hours', {})
@@ -143,23 +146,34 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
 
-def calculate_score(place, preferences, start_lat, start_lng, max_radius):
+def calculate_score(place, preferences, start_lat, start_lng, max_radius, max_reviews=10000):
     """Calculate score for a place based on type and preferences"""
     rating = place.get('rating', 3.0)
     user_ratings_total = place.get('user_ratings_total', 1)
     types = place.get('types', [])
 
-    # Determine popularity tier based on review count
-    if user_ratings_total >= 10000:
-        popularity_multiplier = 5.0      # Mega-popular (Central Park, Times Square)
-    elif user_ratings_total >= 2000:
-        popularity_multiplier = 3.0      # Very popular
-    elif user_ratings_total >= 500:
-        popularity_multiplier = 2.0      # Popular
-    elif user_ratings_total >= 100:
-        popularity_multiplier = 1.3      # Moderate
+    # Auto-calibrate thresholds based on city scale
+    if max_reviews < 500:
+        # Very small city scale
+        if user_ratings_total >= 200:   popularity_multiplier = 5.0
+        elif user_ratings_total >= 50:  popularity_multiplier = 3.0
+        elif user_ratings_total >= 15:  popularity_multiplier = 2.0
+        elif user_ratings_total >= 5:   popularity_multiplier = 1.3
+        else:                           popularity_multiplier = 1.0
+    elif max_reviews < 2000:
+        # Small city scale
+        if user_ratings_total >= 500:   popularity_multiplier = 5.0
+        elif user_ratings_total >= 100: popularity_multiplier = 3.0
+        elif user_ratings_total >= 30:  popularity_multiplier = 2.0
+        elif user_ratings_total >= 10:  popularity_multiplier = 1.3
+        else:                           popularity_multiplier = 1.0
     else:
-        popularity_multiplier = 1.0      # Niche
+        # Default (major city) scale
+        if user_ratings_total >= 10000: popularity_multiplier = 5.0      # Mega-popular (Central Park, Times Square)
+        elif user_ratings_total >= 2000: popularity_multiplier = 3.0     # Very popular
+        elif user_ratings_total >= 500:  popularity_multiplier = 2.0     # Popular
+        elif user_ratings_total >= 100:  popularity_multiplier = 1.3     # Moderate
+        else:                            popularity_multiplier = 1.0     # Niche
 
     # Base score from rating and popularity
     score = rating * popularity_multiplier
