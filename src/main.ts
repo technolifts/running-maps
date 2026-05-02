@@ -3,7 +3,7 @@ import { RouteMap } from './map';
 import { suggestPlaces, generateRoute } from './api';
 import { loadGoogleMapsAPI } from './google-maps-loader';
 import { generateGPX, downloadGPX } from './gpx-export';
-import type { AppState, Place, Preferences } from './types';
+import type { AppState, Place, Preferences, RouteStrategy } from './types';
 import { encodeRoute, decodeRoute } from './route-serializer';
 
 // Analytics tracking
@@ -21,6 +21,8 @@ const state: AppState = {
   suggestedPlaces: [],
   selectedPlaceIds: new Set(),
   generatedRoute: null,
+  routeAlternatives: {},
+  activeStrategy: 'iconic',
 };
 
 // Initialize map
@@ -569,6 +571,10 @@ generateRouteBtn.addEventListener('click', async () => {
 
     state.generatedRoute = response;
 
+    // Cache current strategy result
+    state.routeAlternatives['iconic'] = { places: [...selectedPlaces], route: response };
+    state.activeStrategy = 'iconic';
+
     track('route_generated', {
       num_places: selectedPlaces.length,
       distance_requested: state.distance,
@@ -583,6 +589,36 @@ generateRouteBtn.addEventListener('click', async () => {
 
     // Display route summary
     displayRouteSummary();
+
+    // Fire parallel requests for other strategies (silently, no loading state)
+    const otherStrategies: RouteStrategy[] = ['scenic', 'efficient'];
+    Promise.all(
+      otherStrategies.map(async (strategy) => {
+        try {
+          const altPlacesResponse = await suggestPlaces({
+            location: state.location!,
+            distance_miles: state.distance,
+            preferences: state.preferences,
+            strategy,
+          });
+          const numToSelect = Math.min(state.selectedPlaceIds.size, altPlacesResponse.places.length);
+          const altSelected = altPlacesResponse.places.slice(0, numToSelect);
+          const altRoute = await generateRoute({
+            start: state.location!,
+            selected_places: altSelected,
+            preferences: state.preferences,
+          });
+          state.routeAlternatives[strategy] = { places: altSelected, route: altRoute };
+          // Update tab if currently viewing this strategy
+          if (state.activeStrategy === strategy) {
+            state.generatedRoute = altRoute;
+            displayRouteSummary();
+          }
+        } catch {
+          // Silent failure for alternatives
+        }
+      })
+    );
 
     routeSection.classList.remove('hidden');
     placesSection.classList.add('hidden');
@@ -662,7 +698,34 @@ function displayRouteSummary(): void {
 
   const elevationHTML = renderElevationChart(state.generatedRoute.elevation_profile || []);
 
+  const strategyLabels: Record<string, string> = {
+    iconic: 'Iconic',
+    scenic: 'Scenic',
+    efficient: 'Efficient',
+  };
+  const strategyDescriptions: Record<string, string> = {
+    iconic: 'Top-rated places',
+    scenic: 'Parks & nature',
+    efficient: 'Shortest detour',
+  };
+
+  const tabs = Object.entries(strategyLabels).map(([key, label]) => {
+    const isActive = key === state.activeStrategy;
+    const hasData = key === 'iconic' || !!state.routeAlternatives[key]?.route;
+    return `
+      <button class="strategy-tab px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+        isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      } ${!hasData ? 'opacity-50' : ''}" data-strategy="${key}" ${!hasData ? 'disabled' : ''}>
+        ${label}
+        <span class="block text-xs font-normal opacity-75">${strategyDescriptions[key]}</span>
+      </button>
+    `;
+  }).join('');
+
   routeSummary.innerHTML = `
+    <div class="flex gap-2 mb-4">
+      ${tabs}
+    </div>
     <p class="text-lg mb-2">
       <strong>${distance_miles} mile${distance_miles !== 1 ? 's' : ''}</strong>
       visiting ${optimized_order.length} place${optimized_order.length !== 1 ? 's' : ''}
@@ -673,6 +736,20 @@ function displayRouteSummary(): void {
   `;
 
   openMapsBtn.href = google_maps_url;
+
+  // Wire up tab clicks
+  routeSummary.querySelectorAll('.strategy-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const strategy = (tab as HTMLElement).dataset.strategy as RouteStrategy;
+      const alt = state.routeAlternatives[strategy];
+      if (alt?.route) {
+        state.activeStrategy = strategy;
+        state.generatedRoute = alt.route;
+        displayRouteSummary();
+        routeMap.showRoute(state.location!, alt.route.optimized_order.map(p => p.location));
+      }
+    });
+  });
 }
 
 // Route action handlers
@@ -767,6 +844,8 @@ startOverBtn.addEventListener('click', () => {
   state.suggestedPlaces = [];
   state.selectedPlaceIds.clear();
   state.generatedRoute = null;
+  state.routeAlternatives = {};
+  state.activeStrategy = 'iconic';
 
   findPlacesBtn.disabled = true;
 
