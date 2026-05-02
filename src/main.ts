@@ -31,6 +31,7 @@ const prefParks = document.getElementById('pref-parks') as HTMLInputElement;
 const prefWater = document.getElementById('pref-water') as HTMLInputElement;
 const prefUrban = document.getElementById('pref-urban') as HTMLInputElement;
 const prefTrail = document.getElementById('pref-trail') as HTMLInputElement;
+const prefOpenNow = document.getElementById('pref-open-now') as HTMLInputElement;
 const findPlacesBtn = document.getElementById('find-places-btn') as HTMLButtonElement;
 const mapSection = document.getElementById('map-section') as HTMLDivElement;
 const placesSection = document.getElementById('places-section') as HTMLDivElement;
@@ -129,6 +130,7 @@ function getPreferences(): Preferences {
     water_stops: prefWater.checked,
     urban_explorer: prefUrban.checked,
     trail_runner: prefTrail.checked,
+    open_now: prefOpenNow.checked,
   };
 }
 
@@ -269,6 +271,7 @@ document.querySelectorAll('.preference-chip').forEach(chip => {
     if (pref === 'water') prefWater.checked = chip.classList.contains('active');
     if (pref === 'urban') prefUrban.checked = chip.classList.contains('active');
     if (pref === 'trail') prefTrail.checked = chip.classList.contains('active');
+    if (pref === 'open_now') prefOpenNow.checked = chip.classList.contains('active');
   });
 });
 
@@ -646,6 +649,7 @@ startOverBtn.addEventListener('click', () => {
   prefParks.checked = false;
   prefWater.checked = false;
   prefUrban.checked = false;
+  prefOpenNow.checked = false;
 
   state.location = null;
   state.distance = 5;

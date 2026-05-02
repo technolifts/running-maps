@@ -21,6 +21,7 @@ export interface Preferences {
   water_stops?: boolean;
   urban_explorer?: boolean;
   trail_runner?: boolean;
+  open_now?: boolean;
 }
 
 export interface SuggestPlacesRequest {
