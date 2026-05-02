@@ -75,6 +75,7 @@ class handler(BaseHTTPRequestHandler):
             scored_places = []
             for place in all_places:
                 score = calculate_score(place, preferences, lat, lng, radius_meters)
+                match_reason = build_match_reason(place, preferences, score)
 
                 # Calculate distance from start point
                 place_lat = place['geometry']['location']['lat']
@@ -94,6 +95,7 @@ class handler(BaseHTTPRequestHandler):
                     },
                     'distance_from_start': round(distance, 2),
                     'score': score,
+                    'match_reason': match_reason,
                     'photo_reference': place.get('photos', [{}])[0].get('photo_reference') if place.get('photos') else None
                 })
 
@@ -133,6 +135,50 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
+
+def build_match_reason(place, preferences, score):
+    """Build a human-readable explanation of why a place was suggested."""
+    rating = place.get('rating', 0)
+    reviews = place.get('user_ratings_total', 0)
+    types = place.get('types', [])
+
+    reasons = []
+
+    # Type description
+    if any(t in types for t in ['tourist_attraction', 'landmark', 'monument']):
+        reasons.append('Iconic landmark')
+    elif 'park' in types:
+        reasons.append('Park')
+    elif any(t in types for t in ['museum', 'art_gallery']):
+        reasons.append('Museum/gallery')
+    elif any(t in types for t in ['cafe', 'restaurant']):
+        reasons.append('Cafe/restaurant')
+    elif any(t in types for t in ['hiking_area', 'nature_preserve']):
+        reasons.append('Trail area')
+
+    # Rating
+    if rating >= 4.5:
+        reasons.append(f'{rating}★ highly rated')
+    elif rating >= 4.0:
+        reasons.append(f'{rating}★')
+
+    # Popularity
+    if reviews >= 10000:
+        reasons.append(f'{reviews//1000}k reviews')
+    elif reviews >= 1000:
+        reasons.append(f'{reviews//1000}k reviews')
+    elif reviews >= 100:
+        reasons.append(f'{reviews} reviews')
+
+    # Preference matches
+    if preferences.get('prefer_parks') and 'park' in types:
+        reasons.append('Matches Parks preference')
+    if preferences.get('trail_runner') and any(t in types for t in ['hiking_area', 'nature_preserve', 'park']):
+        reasons.append('Matches Trail Runner')
+    if preferences.get('urban_explorer') and any(t in types for t in ['museum', 'art_gallery', 'tourist_attraction']):
+        reasons.append('Matches Urban Explorer')
+
+    return ' · '.join(reasons) if reasons else 'Recommended place'
 
 def calculate_score(place, preferences, start_lat, start_lng, max_radius):
     """Calculate score for a place based on type and preferences"""

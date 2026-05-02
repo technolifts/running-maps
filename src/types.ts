@@ -13,6 +13,7 @@ export interface Place {
   rating: number;
   photo_url?: string;
   distance_from_start: number;
+  match_reason?: string;
 }
 
 export interface Preferences {

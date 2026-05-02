@@ -438,6 +438,12 @@ function createPlaceCard(place: Place, selected: boolean): HTMLElement {
           <span class="flex items-center gap-1">
             📍 ${place.distance_from_start.toFixed(1)} mi
           </span>
+          ${place.match_reason ? `
+            <span class="tooltip-container ml-1">
+              <button class="text-gray-400 hover:text-gray-600 text-xs" aria-label="Why suggested">ⓘ</button>
+              <span class="tooltip-text">${place.match_reason}</span>
+            </span>
+          ` : ''}
         </div>
 
         ${preferenceMatch}

@@ -100,6 +100,32 @@
   }
 }
 
+.tooltip-container { position: relative; display: inline-block; }
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  background: #1f2937;
+  color: white;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 10;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  max-width: 240px;
+  white-space: normal;
+  text-align: center;
+  width: max-content;
+  max-width: 200px;
+}
+.tooltip-container:hover .tooltip-text,
+.tooltip-container:focus-within .tooltip-text { visibility: visible; opacity: 1; }
+
 @media (max-width: 640px) {
   #map {
     height: 50vh !important;
