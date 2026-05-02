@@ -46,6 +46,9 @@ const shareBtn = document.getElementById('share-btn') as HTMLButtonElement;
 const editSelectionsBtn = document.getElementById('edit-selections-btn') as HTMLButtonElement;
 const startOverBtn = document.getElementById('start-over-btn') as HTMLButtonElement;
 const toggleMapSizeBtn = document.getElementById('toggle-map-size') as HTMLButtonElement;
+const quickTop3Btn = document.getElementById('quick-top3') as HTMLButtonElement;
+const quickParksBtn = document.getElementById('quick-parks') as HTMLButtonElement;
+const quickClearBtn = document.getElementById('quick-clear') as HTMLButtonElement;
 const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement;
@@ -281,6 +284,30 @@ if (toggleMapSizeBtn) {
     }
   });
 }
+
+// Quick-select handlers
+quickTop3Btn.addEventListener('click', () => {
+  state.selectedPlaceIds = new Set(state.suggestedPlaces.slice(0, 3).map(p => p.id));
+  displayPlaces();
+  updateSelectionInfo();
+});
+
+quickParksBtn.addEventListener('click', () => {
+  const parkIds = state.suggestedPlaces
+    .filter(p => p.types.some(t => ['park', 'natural_feature', 'hiking_area', 'nature_preserve'].includes(t)))
+    .map(p => p.id);
+  if (parkIds.length > 0) {
+    state.selectedPlaceIds = new Set(parkIds);
+    displayPlaces();
+    updateSelectionInfo();
+  }
+});
+
+quickClearBtn.addEventListener('click', () => {
+  state.selectedPlaceIds.clear();
+  displayPlaces();
+  updateSelectionInfo();
+});
 
 // Distance select handler
 distanceSelect.addEventListener('change', () => {
