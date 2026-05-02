@@ -74,7 +74,16 @@ class handler(BaseHTTPRequestHandler):
             # Score and rank places
             scored_places = []
             for place in all_places:
+                # Skip permanently closed places
+                if place.get('business_status') == 'CLOSED_PERMANENTLY':
+                    continue
+
                 score = calculate_score(place, preferences, lat, lng, radius_meters)
+
+                # Down-rank currently closed places
+                opening_hours = place.get('opening_hours', {})
+                if opening_hours.get('open_now') == False:
+                    score *= 0.2
 
                 # Calculate distance from start point
                 place_lat = place['geometry']['location']['lat']
