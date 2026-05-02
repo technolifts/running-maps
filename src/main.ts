@@ -557,6 +557,34 @@ generateRouteBtn.addEventListener('click', async () => {
   }
 });
 
+/**
+ * Calculates route difficulty based on distance and elevation gain.
+ * @param distanceMiles - Total route distance in miles
+ * @param elevationProfile - Optional array of elevation points from the API
+ */
+function getRouteDifficulty(distanceMiles: number, elevationProfile?: Array<{elevation_meters: number}>): {
+  label: 'Easy' | 'Moderate' | 'Hard';
+  color: string;
+  description: string;
+} {
+  // Calculate total elevation gain in feet
+  let elevGainFt = 0;
+  if (elevationProfile && elevationProfile.length > 1) {
+    const elevations = elevationProfile.map(p => p.elevation_meters);
+    elevGainFt = Math.round(
+      elevations.reduce((gain, e, i) => i > 0 && e > elevations[i-1] ? gain + (e - elevations[i-1]) : gain, 0) * 3.28084
+    );
+  }
+
+  if (distanceMiles <= 4 && elevGainFt < 100) {
+    return { label: 'Easy', color: 'bg-green-100 text-green-700 border-green-200', description: 'Flat, short route' };
+  } else if (distanceMiles > 10 || elevGainFt > 500) {
+    return { label: 'Hard', color: 'bg-red-100 text-red-700 border-red-200', description: elevGainFt > 500 ? 'Significant elevation' : 'Long distance' };
+  } else {
+    return { label: 'Moderate', color: 'bg-amber-100 text-amber-700 border-amber-200', description: 'Mixed terrain' };
+  }
+}
+
 function displayRouteSummary(): void {
   if (!state.generatedRoute) return;
 
@@ -566,12 +594,19 @@ function displayRouteSummary(): void {
   const hours = Math.floor(estimated_time_minutes / 60);
   const minutes = estimated_time_minutes % 60;
   const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes} minutes`;
+  const difficulty = getRouteDifficulty(distance_miles, state.generatedRoute.elevation_profile);
 
   routeSummary.innerHTML = `
-    <p class="text-lg mb-2">
-      <strong>${distance_miles} mile${distance_miles !== 1 ? 's' : ''}</strong>
-      visiting ${optimized_order.length} place${optimized_order.length !== 1 ? 's' : ''}
-    </p>
+    <div class="flex items-center gap-3 mb-2 flex-wrap">
+      <p class="text-lg">
+        <strong>${distance_miles} mile${distance_miles !== 1 ? 's' : ''}</strong>
+        visiting ${optimized_order.length} place${optimized_order.length !== 1 ? 's' : ''}
+      </p>
+      <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${difficulty.color}">
+        ${difficulty.label === 'Easy' ? '🟢' : difficulty.label === 'Hard' ? '🔴' : '🟡'} ${difficulty.label}
+        <span class="text-xs opacity-75">· ${difficulty.description}</span>
+      </span>
+    </div>
     <p class="text-gray-600 mb-2">${placeNames}</p>
     <p class="text-sm text-gray-500">Estimated time: ${timeStr}</p>
   `;
