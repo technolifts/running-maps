@@ -46,6 +46,12 @@ export interface ElevationPoint {
   elevation_meters: number;
 }
 
+export interface ElevationPoint {
+  lat: number;
+  lng: number;
+  elevation_meters: number;
+}
+
 export interface RouteResponse {
   distance_miles: number;
   optimized_order: Place[];
