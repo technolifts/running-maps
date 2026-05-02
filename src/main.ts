@@ -50,6 +50,32 @@ const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement;
 const progressNav = document.getElementById('progress-nav') as HTMLElement;
+const routeNoteContainer = document.getElementById('route-note-container') as HTMLDivElement;
+const routeNote = document.getElementById('route-note') as HTMLTextAreaElement;
+
+// Note persistence helpers
+function getNoteKey(): string | null {
+  if (!state.location || !state.generatedRoute) return null;
+  const firstPlace = state.generatedRoute.optimized_order[0]?.name || '';
+  return `note_${state.location.lat.toFixed(3)}_${state.location.lng.toFixed(3)}_${state.generatedRoute.distance_miles}_${firstPlace}`;
+}
+
+function loadNote(): void {
+  const key = getNoteKey();
+  if (!key) return;
+  routeNote.value = localStorage.getItem(key) || '';
+}
+
+function saveNote(): void {
+  const key = getNoteKey();
+  if (!key) return;
+  const val = routeNote.value.trim();
+  if (val) {
+    localStorage.setItem(key, val);
+  } else {
+    localStorage.removeItem(key);
+  }
+}
 
 // Helper functions
 function showLoading(): void {
@@ -281,6 +307,13 @@ if (toggleMapSizeBtn) {
     }
   });
 }
+
+// Route note event listeners
+routeNote.addEventListener('blur', saveNote);
+routeNote.addEventListener('input', () => {
+  routeNote.style.height = 'auto';
+  routeNote.style.height = routeNote.scrollHeight + 'px';
+});
 
 // Distance select handler
 distanceSelect.addEventListener('change', () => {
@@ -577,6 +610,9 @@ function displayRouteSummary(): void {
   `;
 
   openMapsBtn.href = google_maps_url;
+
+  routeNoteContainer.classList.remove('hidden');
+  loadNote();
 }
 
 // Route action handlers
@@ -632,6 +668,8 @@ editSelectionsBtn.addEventListener('click', () => {
 });
 
 startOverBtn.addEventListener('click', () => {
+  routeNoteContainer.classList.add('hidden');
+  routeNote.value = '';
   routeSection.classList.add('hidden');
   mapSection.classList.add('hidden');
   progressNav.classList.add('hidden');

@@ -168,6 +168,15 @@
       <div id="route-section" class="hidden bg-white rounded-lg shadow-md p-6">
         <h2 class="text-xl font-semibold mb-4">Your Route is Ready!</h2>
         <div id="route-summary" class="mb-4"></div>
+        <div id="route-note-container" class="hidden mt-4">
+          <textarea
+            id="route-note"
+            placeholder="Add a note about this route... (auto-saved)"
+            rows="2"
+            class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl resize-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 text-gray-700 placeholder-gray-400 transition-all"
+          ></textarea>
+          <p class="text-xs text-gray-400 mt-1">Notes are saved locally on your device</p>
+        </div>
         <div class="flex gap-3">
           <a id="open-maps-btn" href="#" target="_blank" class="btn-primary flex-1 text-center">
             Open in Google Maps
