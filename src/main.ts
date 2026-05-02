@@ -660,5 +660,43 @@ startOverBtn.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
+// Demo cities with hardcoded coordinates
+const DEMO_CITIES = [
+  { name: 'New York', lat: 40.7589, lng: -73.9851 },
+  { name: 'London', lat: 51.5074, lng: -0.1278 },
+  { name: 'Tokyo', lat: 35.6762, lng: 139.6503 },
+  { name: 'Paris', lat: 48.8566, lng: 2.3522 },
+  { name: 'Sydney', lat: -33.8688, lng: 151.2093 },
+  { name: 'Chicago', lat: 41.8781, lng: -87.6298 },
+  { name: 'Barcelona', lat: 41.3851, lng: 2.1734 },
+  { name: 'Melbourne', lat: -37.8136, lng: 144.9631 },
+];
+
+// Pick a random city on page load
+const demoCity = DEMO_CITIES[Math.floor(Math.random() * DEMO_CITIES.length)];
+const demoCityName = document.getElementById('demo-city-name');
+if (demoCityName) demoCityName.textContent = demoCity.name;
+
+const demoCityBtn = document.getElementById('demo-city-btn') as HTMLButtonElement;
+demoCityBtn?.addEventListener('click', async () => {
+  // Fill location
+  state.location = { lat: demoCity.lat, lng: demoCity.lng };
+
+  // Fill the autocomplete input text
+  const input = document.querySelector('#location-autocomplete-container input') as HTMLInputElement;
+  if (input) input.value = demoCity.name;
+
+  // Set distance to 5 miles
+  distanceSelect.value = '5';
+  distanceCustom.classList.add('hidden');
+  state.distance = 5;
+
+  // Enable and trigger find places
+  findPlacesBtn.disabled = false;
+  findPlacesBtn.click();
+
+  track('demo_city_clicked', { city: demoCity.name });
+});
+
 // Initialize
 initAutocomplete();
