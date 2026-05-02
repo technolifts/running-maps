@@ -2,6 +2,7 @@ import './styles.css';
 import { RouteMap } from './map';
 import { suggestPlaces, generateRoute } from './api';
 import { loadGoogleMapsAPI } from './google-maps-loader';
+import { generateGPX, downloadGPX } from './gpx-export';
 import type { AppState, Place, Preferences } from './types';
 
 // Analytics tracking
@@ -42,6 +43,7 @@ const routeSection = document.getElementById('route-section') as HTMLDivElement;
 const routeSummary = document.getElementById('route-summary') as HTMLDivElement;
 const openMapsBtn = document.getElementById('open-maps-btn') as HTMLAnchorElement;
 const copyLinkBtn = document.getElementById('copy-link-btn') as HTMLButtonElement;
+const exportGpxBtn = document.getElementById('export-gpx-btn') as HTMLButtonElement;
 const shareBtn = document.getElementById('share-btn') as HTMLButtonElement;
 const editSelectionsBtn = document.getElementById('edit-selections-btn') as HTMLButtonElement;
 const startOverBtn = document.getElementById('start-over-btn') as HTMLButtonElement;
@@ -596,6 +598,18 @@ copyLinkBtn.addEventListener('click', async () => {
   } catch (error) {
     showError('Failed to copy link');
   }
+});
+
+exportGpxBtn.addEventListener('click', () => {
+  if (!state.generatedRoute || !state.location) return;
+
+  // Use the location search input value as the city name, fallback to coords
+  const locationInput = document.querySelector('#location-autocomplete-container input') as HTMLInputElement;
+  const cityName = locationInput?.value || `${state.location.lat.toFixed(2)},${state.location.lng.toFixed(2)}`;
+
+  const gpx = generateGPX(state.generatedRoute, cityName, state.generatedRoute.distance_miles);
+  downloadGPX(gpx, cityName, state.generatedRoute.distance_miles);
+  track('gpx_exported', { distance_miles: state.generatedRoute.distance_miles });
 });
 
 shareBtn.addEventListener('click', async () => {
