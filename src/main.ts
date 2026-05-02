@@ -27,6 +27,8 @@ const routeMap = new RouteMap();
 // DOM Elements
 const distanceSelect = document.getElementById('distance-select') as HTMLSelectElement;
 const distanceCustom = document.getElementById('distance-custom') as HTMLInputElement;
+const distanceCustomHelp = document.getElementById('distance-custom-help') as HTMLParagraphElement;
+const distanceCustomError = document.getElementById('distance-custom-error') as HTMLParagraphElement;
 const prefParks = document.getElementById('pref-parks') as HTMLInputElement;
 const prefWater = document.getElementById('pref-water') as HTMLInputElement;
 const prefUrban = document.getElementById('pref-urban') as HTMLInputElement;
@@ -282,24 +284,68 @@ if (toggleMapSizeBtn) {
   });
 }
 
+/**
+ * Validates the custom distance input value and updates UI feedback accordingly.
+ * @returns true if the value is valid, false otherwise
+ */
+function validateCustomDistance(): boolean {
+  const val = parseFloat(distanceCustom.value);
+  const errorEl = distanceCustomError;
+  if (!errorEl) return true;
+
+  if (isNaN(val)) {
+    errorEl.textContent = 'Please enter a number';
+    errorEl.classList.remove('hidden');
+    findPlacesBtn.disabled = true;
+    return false;
+  } else if (val < 0.5) {
+    errorEl.textContent = 'Minimum distance is 0.5 miles';
+    errorEl.classList.remove('hidden');
+    findPlacesBtn.disabled = true;
+    return false;
+  } else if (val > 50) {
+    errorEl.textContent = 'Maximum distance is 50 miles';
+    errorEl.classList.remove('hidden');
+    findPlacesBtn.disabled = true;
+    return false;
+  } else {
+    errorEl.classList.add('hidden');
+    // Re-enable only if location is also set
+    findPlacesBtn.disabled = !state.location;
+    return true;
+  }
+}
+
 // Distance select handler
 distanceSelect.addEventListener('change', () => {
   if (distanceSelect.value === 'custom') {
     distanceCustom.classList.remove('hidden');
+    distanceCustomHelp.classList.remove('hidden');
   } else {
     distanceCustom.classList.add('hidden');
+    distanceCustomHelp.classList.add('hidden');
+    distanceCustomError.classList.add('hidden');
     state.distance = parseFloat(distanceSelect.value);
   }
 });
 
 distanceCustom.addEventListener('input', () => {
   state.distance = parseFloat(distanceCustom.value) || 5;
+  validateCustomDistance();
+});
+
+distanceCustom.addEventListener('blur', () => {
+  validateCustomDistance();
 });
 
 // Find places handler
 findPlacesBtn.addEventListener('click', async () => {
   if (!state.location) {
     showError('Please select a location');
+    return;
+  }
+
+  if (distanceSelect.value === 'custom' && !validateCustomDistance()) {
     return;
   }
 
