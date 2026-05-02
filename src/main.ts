@@ -45,6 +45,7 @@ const copyLinkBtn = document.getElementById('copy-link-btn') as HTMLButtonElemen
 const shareBtn = document.getElementById('share-btn') as HTMLButtonElement;
 const editSelectionsBtn = document.getElementById('edit-selections-btn') as HTMLButtonElement;
 const startOverBtn = document.getElementById('start-over-btn') as HTMLButtonElement;
+const paceSelect = document.getElementById('pace-select') as HTMLSelectElement;
 const toggleMapSizeBtn = document.getElementById('toggle-map-size') as HTMLButtonElement;
 const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
@@ -281,6 +282,12 @@ if (toggleMapSizeBtn) {
     }
   });
 }
+
+// Pace select — load persisted value and save on change
+paceSelect.value = localStorage.getItem('pace_min_per_mile') || '10';
+paceSelect.addEventListener('change', () => {
+  localStorage.setItem('pace_min_per_mile', paceSelect.value);
+});
 
 // Distance select handler
 distanceSelect.addEventListener('change', () => {
@@ -519,6 +526,7 @@ generateRouteBtn.addEventListener('click', async () => {
       start: state.location,
       selected_places: selectedPlaces,
       preferences: state.preferences,
+      pace_min_per_mile: parseInt(paceSelect.value),
     });
 
     state.generatedRoute = response;

@@ -37,6 +37,7 @@ export interface RouteRequest {
   start: Location;
   selected_places: Place[];
   preferences?: Preferences;
+  pace_min_per_mile?: number;
 }
 
 export interface RouteResponse {

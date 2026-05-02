@@ -108,8 +108,9 @@ class handler(BaseHTTPRequestHandler):
                     f"&travelmode=walking"
                 )
 
-            # Calculate estimated time (15 min/mile)
-            estimated_time_minutes = int(distance_miles * 15)
+            # Calculate estimated time using user-provided pace
+            pace_min_per_mile = float(data.get('pace_min_per_mile', 10))
+            estimated_time_minutes = int(distance_miles * pace_min_per_mile)
 
             # Build response
             response = {
