@@ -3,6 +3,8 @@ import { RouteMap } from './map';
 import { suggestPlaces, generateRoute } from './api';
 import { loadGoogleMapsAPI } from './google-maps-loader';
 import type { AppState, Place, Preferences } from './types';
+import { getSavedRoutes, saveRoute, deleteRoute } from './saved-routes';
+import type { SavedRoute } from './saved-routes';
 
 // Analytics tracking
 function track(event: string, properties?: Record<string, any>): void {
@@ -50,6 +52,9 @@ const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement;
 const progressNav = document.getElementById('progress-nav') as HTMLElement;
+const saveRouteBtn = document.getElementById('save-route-btn') as HTMLButtonElement;
+const savedRoutesSection = document.getElementById('saved-routes-section') as HTMLDivElement;
+const savedRoutesList = document.getElementById('saved-routes-list') as HTMLDivElement;
 
 // Helper functions
 function showLoading(): void {
@@ -622,6 +627,30 @@ shareBtn.addEventListener('click', async () => {
   }
 });
 
+saveRouteBtn.addEventListener('click', () => {
+  if (!state.generatedRoute || !state.location) return;
+
+  const locationInput = document.querySelector('#location-autocomplete-container input') as HTMLInputElement;
+  const locationName = locationInput?.value || 'Unknown location';
+
+  saveRoute({
+    locationName,
+    location: state.location,
+    distanceMiles: state.generatedRoute.distance_miles,
+    preferences: state.preferences,
+    route: state.generatedRoute,
+  });
+
+  saveRouteBtn.textContent = 'Saved!';
+  saveRouteBtn.disabled = true;
+  setTimeout(() => {
+    saveRouteBtn.textContent = 'Save Route';
+    saveRouteBtn.disabled = false;
+  }, 2000);
+
+  renderSavedRoutes();
+});
+
 editSelectionsBtn.addEventListener('click', () => {
   routeSection.classList.add('hidden');
   placesSection.classList.remove('hidden');
@@ -655,10 +684,74 @@ startOverBtn.addEventListener('click', () => {
   state.generatedRoute = null;
 
   findPlacesBtn.disabled = true;
+  saveRouteBtn.disabled = false;
+  saveRouteBtn.textContent = 'Save Route';
 
   // Scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
+function renderSavedRoutes(): void {
+  const routes = getSavedRoutes();
+  if (routes.length === 0) {
+    savedRoutesSection.classList.add('hidden');
+    return;
+  }
+
+  savedRoutesSection.classList.remove('hidden');
+  savedRoutesList.innerHTML = routes.map((r: SavedRoute) => {
+    const date = new Date(r.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const places = r.route.optimized_order.map(p => p.name).join(', ');
+    return `
+      <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-3 hover:border-blue-300 transition-colors">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-gray-900">${r.locationName}</span>
+            <span class="text-xs text-gray-400">${date}</span>
+          </div>
+          <p class="text-sm text-gray-600 mt-0.5">${r.distanceMiles} mi · ${r.route.optimized_order.length} places</p>
+          <p class="text-xs text-gray-400 mt-1 truncate">${places}</p>
+        </div>
+        <div class="flex gap-2 flex-shrink-0">
+          <button data-route-id="${r.id}" class="load-route-btn text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Load</button>
+          <button data-route-id="${r.id}" class="delete-route-btn text-xs px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Wire up load buttons
+  savedRoutesList.querySelectorAll('.load-route-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = (btn as HTMLElement).dataset.routeId!;
+      const saved = getSavedRoutes().find((r: SavedRoute) => r.id === id);
+      if (!saved) return;
+
+      state.location = saved.location;
+      state.distance = saved.distanceMiles;
+      state.preferences = saved.preferences;
+      state.generatedRoute = saved.route;
+      state.suggestedPlaces = saved.route.optimized_order;
+      state.selectedPlaceIds = new Set(saved.route.optimized_order.map(p => p.id));
+
+      displayRouteSummary();
+      routeSection.classList.remove('hidden');
+      placesSection.classList.add('hidden');
+      updateProgress('route');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // Wire up delete buttons
+  savedRoutesList.querySelectorAll('.delete-route-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = (btn as HTMLElement).dataset.routeId!;
+      deleteRoute(id);
+      renderSavedRoutes();
+    });
+  });
+}
+
 // Initialize
 initAutocomplete();
+renderSavedRoutes();
