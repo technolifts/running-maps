@@ -50,6 +50,9 @@ const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement;
 const progressNav = document.getElementById('progress-nav') as HTMLElement;
+const finishTimeSection = document.getElementById('finish-time-section') as HTMLDivElement;
+const startTimeInput = document.getElementById('start-time-input') as HTMLInputElement;
+const finishTimeDisplay = document.getElementById('finish-time-display') as HTMLSpanElement;
 
 // Helper functions
 function showLoading(): void {
@@ -194,6 +197,23 @@ function getPreferenceMatch(place: Place, prefs: Preferences): string {
   }
   return '';
 }
+
+/**
+ * Calculates and displays the predicted finish time based on the current start time input
+ * and the generated route's estimated duration.
+ */
+function updateFinishTime(): void {
+  if (!state.generatedRoute) return;
+  const [h, m] = startTimeInput.value.split(':').map(Number);
+  const start = new Date();
+  start.setHours(h, m, 0, 0);
+  const finishMs = start.getTime() + state.generatedRoute.estimated_time_minutes * 60000;
+  const finish = new Date(finishMs);
+  const finishStr = finish.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  finishTimeDisplay.textContent = `→ Done by ${finishStr}`;
+}
+
+startTimeInput.addEventListener('change', updateFinishTime);
 
 // Setup autocomplete with new PlaceAutocompleteElement
 async function initAutocomplete(): Promise<void> {
@@ -577,6 +597,11 @@ function displayRouteSummary(): void {
   `;
 
   openMapsBtn.href = google_maps_url;
+
+  finishTimeSection.classList.remove('hidden');
+  const now = new Date();
+  startTimeInput.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  updateFinishTime();
 }
 
 // Route action handlers
@@ -635,6 +660,7 @@ startOverBtn.addEventListener('click', () => {
   routeSection.classList.add('hidden');
   mapSection.classList.add('hidden');
   progressNav.classList.add('hidden');
+  finishTimeSection.classList.add('hidden');
 
   // Reset preference chips
   document.querySelectorAll('.preference-chip').forEach(chip => {
