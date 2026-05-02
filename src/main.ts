@@ -561,19 +561,47 @@ function displayRouteSummary(): void {
   if (!state.generatedRoute) return;
 
   const { distance_miles, optimized_order, estimated_time_minutes, google_maps_url } = state.generatedRoute;
+  const legDistances = state.generatedRoute.leg_distances || [];
 
-  const placeNames = optimized_order.map(p => p.name).join(', ');
   const hours = Math.floor(estimated_time_minutes / 60);
   const minutes = estimated_time_minutes % 60;
   const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes} minutes`;
 
+  // Build waypoint rows
+  const waypointRows = optimized_order.map((place, i) => {
+    const icon = getCategoryIcon(place.types[0] || 'place');
+    const dist = i === 0 ? 'Start' : (legDistances[i - 1] ? `+${legDistances[i - 1].toFixed(1)} mi` : '');
+    const name = place.name.length > 28 ? place.name.slice(0, 25) + '…' : place.name;
+    return `
+      <div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+        <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">${i + 1}</div>
+        <span class="flex-1 text-sm font-medium text-gray-800">${name}</span>
+        <span class="text-base">${icon}</span>
+        <span class="text-xs text-gray-400 w-14 text-right">${dist}</span>
+      </div>
+    `;
+  }).join('');
+
+  // Return leg
+  const returnDist = legDistances[legDistances.length - 1];
+  const returnRow = `
+    <div class="flex items-center gap-3 py-2">
+      <div class="w-7 h-7 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold flex-shrink-0">↩</div>
+      <span class="flex-1 text-sm text-gray-500 italic">Back to start</span>
+      <span class="text-xs text-gray-400 w-14 text-right">${returnDist ? `+${returnDist.toFixed(1)} mi` : ''}</span>
+    </div>
+  `;
+
   routeSummary.innerHTML = `
-    <p class="text-lg mb-2">
-      <strong>${distance_miles} mile${distance_miles !== 1 ? 's' : ''}</strong>
-      visiting ${optimized_order.length} place${optimized_order.length !== 1 ? 's' : ''}
-    </p>
-    <p class="text-gray-600 mb-2">${placeNames}</p>
-    <p class="text-sm text-gray-500">Estimated time: ${timeStr}</p>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="text-lg font-bold text-gray-900">${distance_miles} miles</span>
+      <span class="text-gray-300">·</span>
+      <span class="text-sm text-gray-600">${timeStr}</span>
+    </div>
+    <div class="rounded-xl border border-gray-200 overflow-hidden bg-white">
+      ${waypointRows}
+      ${returnRow}
+    </div>
   `;
 
   openMapsBtn.href = google_maps_url;
