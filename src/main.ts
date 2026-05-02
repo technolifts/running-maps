@@ -46,6 +46,10 @@ const shareBtn = document.getElementById('share-btn') as HTMLButtonElement;
 const editSelectionsBtn = document.getElementById('edit-selections-btn') as HTMLButtonElement;
 const startOverBtn = document.getElementById('start-over-btn') as HTMLButtonElement;
 const toggleMapSizeBtn = document.getElementById('toggle-map-size') as HTMLButtonElement;
+const printRouteBtn = document.getElementById('print-route-btn') as HTMLButtonElement;
+const printTitle = document.getElementById('print-title') as HTMLHeadingElement;
+const printMeta = document.getElementById('print-meta') as HTMLParagraphElement;
+const printPlaces = document.getElementById('print-places') as HTMLDivElement;
 const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement;
@@ -596,6 +600,33 @@ copyLinkBtn.addEventListener('click', async () => {
   } catch (error) {
     showError('Failed to copy link');
   }
+});
+
+printRouteBtn.addEventListener('click', () => {
+  if (!state.generatedRoute) return;
+
+  const locationInput = document.querySelector('#location-autocomplete-container input') as HTMLInputElement;
+  const locationName = locationInput?.value || 'Running Route';
+  const { distance_miles, optimized_order, estimated_time_minutes } = state.generatedRoute;
+  const hours = Math.floor(estimated_time_minutes / 60);
+  const mins = estimated_time_minutes % 60;
+  const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+
+  printTitle.textContent = `${locationName} · ${distance_miles} mile run`;
+  printMeta.textContent = `${optimized_order.length} stops · Est. ${timeStr} · ${new Date().toLocaleDateString()}`;
+
+  printPlaces.innerHTML = optimized_order.map((place, i) => `
+    <div class="print-place-item">
+      <div class="print-place-num">${i + 1}</div>
+      <div>
+        <div class="print-place-name">${place.name}</div>
+        <div class="print-place-type">${(place.types[0] || 'place').replace(/_/g, ' ')} · ${place.distance_from_start.toFixed(1)} mi from start</div>
+      </div>
+    </div>
+  `).join('');
+
+  track('route_printed', { distance_miles });
+  window.print();
 });
 
 shareBtn.addEventListener('click', async () => {

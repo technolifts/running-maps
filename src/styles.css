@@ -100,6 +100,68 @@
   }
 }
 
+@media print {
+  body > * { display: none !important; }
+  #print-card { display: block !important; }
+
+  #print-card {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #111;
+    padding: 24px;
+  }
+
+  .print-header {
+    border-bottom: 2px solid #3B82F6;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .print-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #1e40af;
+  }
+
+  .print-header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .print-place-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .print-place-num {
+    width: 26px;
+    height: 26px;
+    background: #3B82F6;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .print-place-name { font-size: 14px; font-weight: 600; }
+  .print-place-type { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+  #print-footer {
+    margin-top: 20px;
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: center;
+  }
+}
+
 @media (max-width: 640px) {
   #map {
     height: 50vh !important;
