@@ -56,6 +56,7 @@ const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement;
 const progressNav = document.getElementById('progress-nav') as HTMLElement;
+const selectionTip = document.getElementById('selection-tip') as HTMLParagraphElement;
 
 // Helper functions
 function showLoading(): void {
@@ -547,6 +548,21 @@ function updateSelectionInfo(): void {
   estimatedDistance.textContent = `~${estimatedMiles.toFixed(1)} miles`;
 
   generateRouteBtn.disabled = count === 0;
+
+  if (selectionTip) selectionTip.classList.toggle('hidden', state.suggestedPlaces.length === 0);
+
+  // Update button label based on selection count
+  if (count === 0) {
+    generateRouteBtn.textContent = 'Select at least 1 place';
+  } else if (count <= 2) {
+    generateRouteBtn.textContent = 'Generate Route (short route)';
+  } else if (count <= 5) {
+    generateRouteBtn.textContent = 'Generate Route ✓';
+  } else if (count <= 8) {
+    generateRouteBtn.textContent = 'Generate Route (long route)';
+  } else {
+    generateRouteBtn.textContent = 'Generate Route (very long)';
+  }
 }
 
 // Generate route handler
