@@ -98,6 +98,14 @@
   .success-check {
     animation: checkmark 0.6s ease-in-out;
   }
+
+  @keyframes card-highlight {
+    0%, 100% { border-color: #e5e7eb; box-shadow: none; }
+    30%, 70% { border-color: #F59E0B; box-shadow: 0 0 0 3px #FEF3C7; }
+  }
+  .card-highlight {
+    animation: card-highlight 2s ease-in-out;
+  }
 }
 
 gmp-place-autocomplete {
