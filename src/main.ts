@@ -56,6 +56,34 @@ const loading = document.getElementById('loading') as HTMLDivElement;
 const initLoader = document.getElementById('init-loader') as HTMLDivElement;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement;
 const progressNav = document.getElementById('progress-nav') as HTMLElement;
+const unitsMiBtn = document.getElementById('units-mi') as HTMLButtonElement;
+const unitsKmBtn = document.getElementById('units-km') as HTMLButtonElement;
+
+// Unit helpers
+type DistanceUnit = 'mi' | 'km';
+
+function getUnit(): DistanceUnit {
+  return (localStorage.getItem('distance_unit') as DistanceUnit) || 'mi';
+}
+
+function setUnit(unit: DistanceUnit): void {
+  localStorage.setItem('distance_unit', unit);
+  updateUnitButtons();
+  if (state.suggestedPlaces.length > 0) displayPlaces();
+  if (state.generatedRoute) displayRouteSummary();
+}
+
+function updateUnitButtons(): void {
+  const unit = getUnit();
+  unitsMiBtn.className = `px-2 py-1 rounded-md font-medium text-xs ${unit === 'mi' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
+  unitsKmBtn.className = `px-2 py-1 rounded-md font-medium text-xs ${unit === 'km' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
+}
+
+function formatDistance(miles: number): string {
+  const unit = getUnit();
+  if (unit === 'km') return `${(miles * 1.60934).toFixed(1)} km`;
+  return `${miles.toFixed(1)} mi`;
+}
 
 // Helper functions
 function showLoading(): void {
@@ -313,6 +341,11 @@ document.querySelectorAll('.preference-chip').forEach(chip => {
   });
 });
 
+// Unit toggle handlers
+unitsMiBtn.addEventListener('click', () => setUnit('mi'));
+unitsKmBtn.addEventListener('click', () => setUnit('km'));
+updateUnitButtons(); // init on load
+
 // Map size toggle handler
 if (toggleMapSizeBtn) {
   toggleMapSizeBtn.addEventListener('click', () => {
@@ -483,7 +516,7 @@ function createPlaceCard(place: Place, selected: boolean): HTMLElement {
             </span>
           ` : ''}
           <span class="flex items-center gap-1">
-            📍 ${place.distance_from_start.toFixed(1)} mi
+            📍 ${formatDistance(place.distance_from_start)}
           </span>
         </div>
 
@@ -544,7 +577,7 @@ function updateSelectionInfo(): void {
 
   // Rough estimate: (number of places * average spacing) + connections
   const estimatedMiles = state.distance;
-  estimatedDistance.textContent = `~${estimatedMiles.toFixed(1)} miles`;
+  estimatedDistance.textContent = `~${formatDistance(estimatedMiles)}`;
 
   generateRouteBtn.disabled = count === 0;
 }
@@ -727,7 +760,7 @@ function displayRouteSummary(): void {
       ${tabs}
     </div>
     <p class="text-lg mb-2">
-      <strong>${distance_miles} mile${distance_miles !== 1 ? 's' : ''}</strong>
+      <strong>${formatDistance(distance_miles)}</strong>
       visiting ${optimized_order.length} place${optimized_order.length !== 1 ? 's' : ''}
     </p>
     <p class="text-gray-600 mb-2">${placeNames}</p>
